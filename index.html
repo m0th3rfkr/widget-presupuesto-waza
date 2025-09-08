@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto WAZA - Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+            height: 100vh;
+        }
+        
+        .widget-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .widget-header {
+            background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .widget-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .section {
+            background: #f8f9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1a73e8;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        .btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        .btn:hover:not(:disabled) {
+            background: #1557b0;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+    </style>
+    
+    <!-- Script de Zoho CRM SDK -->
+    <script src="https://live.zwidgets.com/js-sdk/1.1/ZohoEmbededAppSDK.min.js"></script>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="widget-header">
+            <h2>Presupuesto WAZA - Test</h2>
+            <p>Widget funcionando correctamente</p>
+        </div>
+        
+        <div class="widget-content">
+            <!-- Sección de prueba -->
+            <div class="section">
+                <h3>Crear Presupuesto de Prueba</h3>
+                
+                <div class="form-group">
+                    <label for="quote-subject">Asunto del presupuesto:</label>
+                    <input type="text" id="quote-subject" placeholder="Presupuesto de prueba" value="Presupuesto Test WAZA">
+                </div>
+                
+                <div class="form-group">
+                    <label for="quote-amount">Monto:</label>
+                    <input type="number" id="quote-amount" placeholder="10000" value="15000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="quote-description">Descripción:</label>
+                    <textarea id="quote-description" placeholder="Descripción del presupuesto">Presupuesto creado desde el widget WAZA</textarea>
+                </div>
+                
+                <button class="btn" onclick="createTestQuote()">
+                    Crear Presupuesto de Prueba
+                </button>
+            </div>
+            
+            <!-- Sección de información -->
+            <div class="section">
+                <h3>Estado del Widget</h3>
+                <div id="widget-status">Inicializando...</div>
+            </div>
+            
+            <!-- Mensajes de estado -->
+            <div id="status-messages"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let ZOHO = {};
+        let widgetInitialized = false;
+        
+        // Inicializar el SDK de Zoho cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado, inicializando widget...');
+            initializeWidget();
+        });
+        
+        // Función para inicializar el widget
+        async function initializeWidget() {
+            try {
+                showStatus('Inicializando widget de Zoho CRM...', 'info');
+                
+                // Inicializar el SDK de Zoho
+                await ZCRMSDK.APP.init();
+                
+                widgetInitialized = true;
+                showStatus('Widget inicializado correctamente', 'success');
+                updateWidgetStatus('Conectado a Zoho CRM');
+                
+                console.log('Widget inicializado exitosamente');
+                
+            } catch (error) {
+                console.error('Error al inicializar widget:', error);
+                showStatus('Error al inicializar: ' + error.message, 'error');
+                updateWidgetStatus('Error de conexión');
+            }
+        }
+        
+        // Función para crear un presupuesto de prueba
+        async function createTestQuote() {
+            if (!widgetInitialized) {
+                showStatus('Widget no inicializado. Reintentando...', 'error');
+                await initializeWidget();
+                return;
+            }
+            
+            try {
+                showStatus('Creando presupuesto de prueba...', 'info');
+                
+                // Obtener datos del formulario
+                const subject = document.getElementById('quote-subject').value;
+                const amount = parseFloat(document.getElementById('quote-amount').value);
+                const description = document.getElementById('quote-description').value;
+                
+                // Preparar datos para Zoho CRM
+                const quoteData = {
+                    Subject: subject,
+                    Grand_Total: amount,
+                    Description: description,
+                    Quote_Stage: 'Draft',
+                    Valid_Till: getValidTillDate()
+                };
+                
+                console.log('Datos del presupuesto:', quoteData);
+                
+                // Crear el presupuesto en Zoho CRM
+                const result = await ZCRMSDK.API.insertRecord({
+                    Entity: 'Quotes',
+                    APIData: quoteData,
+                    Trigger: ['workflow']
+                });
+                
+                console.log('Resultado de la creación:', result);
+                
+                if (result.data && result.data[0].status === 'success') {
+                    const quoteId = result.data[0].details.id;
+                    showStatus(`¡Presupuesto creado exitosamente! ID: ${quoteId}`, 'success');
+                    
+                    // Opcional: Navegar al presupuesto creado
+                    setTimeout(() => {
+                        ZCRMSDK.APP.navigateTo('Quotes', quoteId);
+                    }, 2000);
+                } else {
+                    const errorMsg = result.data?.[0]?.message || 'Error desconocido';
+                    showStatus('Error al crear presupuesto: ' + errorMsg, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error al crear presupuesto:', error);
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Funciones auxiliares
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status-messages');
+            const statusEl = document.createElement('div');
+            statusEl.className = `status status-${type}`;
+            statusEl.textContent = message;
+            
+            // Limpiar mensajes anteriores del mismo tipo
+            const existing = statusDiv.querySelector(`.status-${type}`);
+            if (existing) {
+                existing.remove();
+            }
+            
+            statusDiv.appendChild(statusEl);
+            
+            // Auto-remove después de 5 segundos para mensajes de éxito
+            if (type === 'success') {
+                setTimeout(() => statusEl.remove(), 5000);
+            }
+        }
+        
+        function updateWidgetStatus(status) {
+            document.getElementById('widget-status').textContent = status;
+        }
+        
+        function getValidTillDate() {
+            const date = new Date();
+            date.setDate(date.getDate() + 30); // Válido por 30 días
+            return date.toISOString().split('T')[0];
+        }
+    </script>
+</body>
+</html>
