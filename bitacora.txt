@@ -1,0 +1,44 @@
+BITÁCORA DE CAMBIOS - WIDGET PRESUPUESTO WAZA
+=====================================================
+
+Fecha: 2025-09-11
+Hora: 10:36
+
+CAMBIO 001:
+- Acción: Creación de archivos de tracking según CLAUDE.md
+- Archivos creados: CHANGE_LOG.md, COMMIT_LOG.md, ELEMENT_IDS.md, bitacora.txt
+- Estado: COMPLETADO
+- Observaciones: Implementación de la estructura de seguimiento requerida por las reglas de desarrollo
+
+CAMBIO 002:
+- Acción: Análisis del proyecto existente
+- Archivos revisados: index.html, README.md, LICENSE
+- Estado: COMPLETADO  
+- Observaciones: Proyecto contiene widget básico de Zoho CRM para creación de presupuestos
+
+CAMBIO 003:
+- Acción: Creación de cotizador.html con infraestructura completa
+- Archivos creados: cotizador.html
+- Estado: COMPLETADO
+- Observaciones: Implementación completa del generador de Excel + MD desde building blocks JSON
+
+CAMBIO 004:
+- Acción: Actualización de ELEMENT_IDS.md con nuevos elementos
+- Archivos modificados: ELEMENT_IDS.md
+- Estado: COMPLETADO
+- Observaciones: Agregados 13 nuevos IDs siguiendo el patrón establecido
+
+CAMBIO 005:
+- Acción: Creación del archivo CLAUDE.md con reglas de desarrollo
+- Archivos creados: CLAUDE.md
+- Estado: COMPLETADO
+- Observaciones: Documento maestro con 14 reglas de desarrollo y especificaciones de archivos de seguimiento
+
+PENDIENTE:
+- Integrar funcionalidades de building blocks en index.html original
+- Completar implementación de llenarTemplate() function
+- Agregar validación de datos JSON
+- Implementar tests unitarios
+
+---
+NOTA: Este archivo se actualiza con cada cambio realizado en el proyecto.

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Excel + MD desde Building Blocks</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-section {
+            border: 2px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .config-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .preview {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .preview pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador Excel + MD desde Building Blocks JSON</h1>
+        <p>Genera automáticamente un Excel estructurado y un documento Markdown desde tu JSON de building blocks</p>
+        
+        <!-- Sección de carga -->
+        <div class="upload-section">
+            <h3>Cargar JSON Building Blocks</h3>
+            <div class="form-group">
+                <label for="json-file-001">JSON Building Blocks v2.0:</label>
+                <input type="file" id="json-file-001" accept=".json" />
+            </div>
+            <div class="form-group">
+                <label for="template-file-002">Template Excel (opcional):</label>
+                <input type="file" id="template-file-002" accept=".xlsx,.xls" />
+            </div>
+        </div>
+        
+        <!-- Configuración del proyecto -->
+        <div class="config-section">
+            <div>
+                <div class="form-group">
+                    <label for="nombre-proyecto-003">Nombre del Proyecto:</label>
+                    <input type="text" id="nombre-proyecto-003" value="Plataforma Ejemplo" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="tarifa-base-004">Tarifa Base por Hora (MXN):</label>
+                    <input type="number" id="tarifa-base-004" value="500" min="100" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="tarifa-ia-005">Tarifa IA por Hora (MXN):</label>
+                    <input type="number" id="tarifa-ia-005" value="300" min="50" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="markup-006">Markup Cliente (%):</label>
+                    <input type="number" id="markup-006" value="40" min="0" max="200" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="eficiencia-ia-007">Eficiencia IA (% reducción):</label>
+                    <input type="number" id="eficiencia-ia-007" value="35" min="0" max="80" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="categorias-filtro-008">Categorías a incluir (separadas por coma):</label>
+                    <textarea id="categorias-filtro-008" placeholder="Dejar vacío para incluir todas las categorías..."></textarea>
+                </div>
+            </div>
+            
+            <div>
+                <div class="form-group">
+                    <label for="factor-pm-009">Factor PM (%):</label>
+                    <input type="number" id="factor-pm-009" value="18" min="0" max="50" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="factor-testing-010">Factor Testing (%):</label>
+                    <input type="number" id="factor-testing-010" value="12" min="0" max="30" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="factor-contingencia-011">Factor Contingencia (%):</label>
+                    <input type="number" id="factor-contingencia-011" value="20" min="0" max="50" />
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="generarArchivos()">📊 Generar Excel + MD</button>
+            <button onclick="previsualizarMD()">👁️ Preview MD</button>
+        </div>
+        
+        <!-- Preview del Markdown -->
+        <div id="preview-container-012" class="preview" style="display: none;">
+            <h4>Preview del Markdown:</h4>
+            <pre id="preview-content-013"></pre>
+        </div>
+    </div>
+
+    <script>
+        let buildingBlocksData = null;
+        let templateData = null;
+        
+        // Event listeners para cargar archivos
+        document.getElementById('json-file-001').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                cargarJSON(e.target.files[0]);
+            }
+        });
+        
+        document.getElementById('template-file-002').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                cargarTemplate(e.target.files[0]);
+            }
+        });
+        
+        function cargarJSON(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.categories || !data.metadata) {
+                        throw new Error('El JSON no tiene la estructura esperada');
+                    }
+                    buildingBlocksData = data;
+                    mostrarMensaje('JSON cargado correctamente', 'success');
+                } catch (error) {
+                    mostrarMensaje('Error al cargar JSON: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function cargarTemplate(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    templateData = workbook;
+                    mostrarMensaje('Template Excel cargado correctamente', 'success');
+                } catch (error) {
+                    mostrarMensaje('Error al cargar template: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function generarArchivos() {
+            if (!buildingBlocksData) {
+                mostrarMensaje('Primero carga el archivo JSON', 'error');
+                return;
+            }
+            
+            try {
+                const config = obtenerConfiguracion();
+                const datosEstructurados = procesarBuildingBlocks(buildingBlocksData, config);
+                
+                // Generar Excel nuevo (completo)
+                generarExcel(datosEstructurados, config);
+                
+                // Llenar template si existe
+                if (templateData) {
+                    llenarTemplate(datosEstructurados, config);
+                }
+                
+                // Generar Markdown
+                generarMarkdown(datosEstructurados, config);
+                
+                mostrarMensaje('Archivos generados correctamente', 'success');
+            } catch (error) {
+                mostrarMensaje('Error al generar archivos: ' + error.message, 'error');
+            }
+        }
+        
+        function obtenerConfiguracion() {
+            const categoriasFiltroText = document.getElementById('categorias-filtro-008').value.trim();
+            const categoriasFiltro = categoriasFiltroText ? 
+                categoriasFiltroText.split(',').map(c => c.trim()) : null;
+            
+            return {
+                nombreProyecto: document.getElementById('nombre-proyecto-003').value,
+                tarifaBase: parseFloat(document.getElementById('tarifa-base-004').value),
+                tarifaIA: parseFloat(document.getElementById('tarifa-ia-005').value),
+                markup: parseFloat(document.getElementById('markup-006').value),
+                eficienciaIA: parseFloat(document.getElementById('eficiencia-ia-007').value),
+                categoriasFiltro: categoriasFiltro,
+                factorPM: parseFloat(document.getElementById('factor-pm-009').value),
+                factorTesting: parseFloat(document.getElementById('factor-testing-010').value),
+                factorContingencia: parseFloat(document.getElementById('factor-contingencia-011').value)
+            };
+        }
+        
+        function procesarBuildingBlocks(data, config) {
+            const componentes = [];
+            const categorias = {};
+            let idCounter = 1;
+            
+            for (const [categoriaId, categoria] of Object.entries(data.categories)) {
+                // Filtrar categorías si se especificó
+                if (config.categoriasFiltro && 
+                    !config.categoriasFiltro.some(filtro => 
+                        categoria.name.toLowerCase().includes(filtro.toLowerCase()) ||
+                        categoriaId.toLowerCase().includes(filtro.toLowerCase())
+                    )) {
+                    continue;
+                }
+                
+                if (!categorias[categoria.name]) {
+                    categorias[categoria.name] = {
+                        horas: { facil: 0, intermedio: 0, complejo: 0 },
+                        horasIA: { facil: 0, intermedio: 0, complejo: 0 },
+                        costosHumanos: { facil: 0, intermedio: 0, complejo: 0 },
+                        costosIA: { facil: 0, intermedio: 0, complejo: 0 },
+                        costosCliente: { facil: 0, intermedio: 0, complejo: 0 },
+                        items: 0
+                    };
+                }
+                
+                for (const [blockId, block] of Object.entries(categoria.building_blocks)) {
+                    const horasFacil = block.hours.facil;
+                    const horasIntermedio = block.hours.intermedio;
+                    const horasComplejo = block.hours.complejo;
+                    
+                    // Calcular horas con eficiencia IA
+                    const factorEficiencia = (100 - config.eficienciaIA) / 100;
+                    const horasIAFacil = Math.round(horasFacil * factorEficiencia);
+                    const horasIAIntermedio = Math.round(horasIntermedio * factorEficiencia);
+                    const horasIAComplejo = Math.round(horasComplejo * factorEficiencia);
+                    
+                    // Costos humanos
+                    const costoHumanoFacil = horasFacil * config.tarifaBase;
+                    const costoHumanoIntermedio = horasIntermedio * config.tarifaBase;
+                    const costoHumanoComplejo = horasComplejo * config.tarifaBase;
+                    
+                    // Costos con IA
+                    const costoIAFacil = horasIAFacil * config.tarifaIA;
+                    const costoIAIntermedio = horasIAIntermedio * config.tarifaIA;
+                    const costoIAComplejo = horasIAComplejo * config.tarifaIA;
+                    
+                    // Costos para cliente (con markup)
+                    const factorMarkup = (100 + config.markup) / 100;
+                    const costoClienteFacil = costoIAFacil * factorMarkup;
+                    const costoClienteIntermedio = costoIAIntermedio * factorMarkup;
+                    const costoClienteComplejo = costoIAComplejo * factorMarkup;
+                    
+                    componentes.push({
+                        id: idCounter++,
+                        categoria: categoria.name,
+                        componente: block.name,
+                        buildingBlocks: blockId,
+                        // Horas originales
+                        horasFacil: horasFacil,
+                        horasIntermedio: horasIntermedio,
+                        horasComplejo: horasComplejo,
+                        // Horas con IA
+                        horasIAFacil: horasIAFacil,
+                        horasIAIntermedio: horasIAIntermedio,
+                        horasIAComplejo: horasIAComplejo,
+                        // Costos humanos
+                        costoHumanoFacil: costoHumanoFacil,
+                        costoHumanoIntermedio: costoHumanoIntermedio,
+                        costoHumanoComplejo: costoHumanoComplejo,
+                        // Costos IA
+                        costoIAFacil: costoIAFacil,
+                        costoIAIntermedio: costoIAIntermedio,
+                        costoIAComplejo: costoIAComplejo,
+                        // Costos cliente
+                        costoClienteFacil: costoClienteFacil,
+                        costoClienteIntermedio: costoClienteIntermedio,
+                        costoClienteComplejo: costoClienteComplejo,
+                        functionPoints: block.function_points || { facil: 0, intermedio: 0, complejo: 0 }
+                    });
+                    
+                    // Agregar a totales por categoría
+                    categorias[categoria.name].horas.facil += horasFacil;
+                    categorias[categoria.name].horas.intermedio += horasIntermedio;
+                    categorias[categoria.name].horas.complejo += horasComplejo;
+                    categorias[categoria.name].horasIA.facil += horasIAFacil;
+                    categorias[categoria.name].horasIA.intermedio += horasIAIntermedio;
+                    categorias[categoria.name].horasIA.complejo += horasIAComplejo;
+                    categorias[categoria.name].costosHumanos.facil += costoHumanoFacil;
+                    categorias[categoria.name].costosHumanos.intermedio += costoHumanoIntermedio;
+                    categorias[categoria.name].costosHumanos.complejo += costoHumanoComplejo;
+                    categorias[categoria.name].costosIA.facil += costoIAFacil;
+                    categorias[categoria.name].costosIA.intermedio += costoIAIntermedio;
+                    categorias[categoria.name].costosIA.complejo += costoIAComplejo;
+                    categorias[categoria.name].costosCliente.facil += costoClienteFacil;
+                    categorias[categoria.name].costosCliente.intermedio += costoClienteIntermedio;
+                    categorias[categoria.name].costosCliente.complejo += costoClienteComplejo;
+                    categorias[categoria.name].items += 1;
+                }
+            }
+            
+            return { componentes, categorias };
+        }
+        
+        function crearContenidoMarkdown(datos, config) {
+            let markdown = `# Estructura Excel - Cotización ${config.nombreProyecto}\n\n`;
+            markdown += `*Generado con IA - Eficiencia ${config.eficienciaIA}% - Markup ${config.markup}%*\n\n`;
+            
+            // Hoja 1: Cotización Principal
+            markdown += `## Hoja 1: "Cotización_Principal"\n\n`;
+            markdown += `| ID | Categoría | Componente | Building Blocks | Horas_IA_Básico | Horas_IA_Estándar | Horas_IA_Enterprise | Costo_Cliente_Básico | Costo_Cliente_Estándar | Costo_Cliente_Enterprise |\n`;
+            markdown += `|----|-----------|------------|-----------------|-----------------|-------------------|---------------------|---------------------|----------------------|------------------------|\n`;
+            
+            datos.componentes.forEach(comp => {
+                markdown += `| ${comp.id} | ${comp.categoria} | ${comp.componente} | ${comp.buildingBlocks} | ${comp.horasIAFacil} | ${comp.horasIAIntermedio} | ${comp.horasIAComplejo} | ${Math.round(comp.costoClienteFacil)} | ${Math.round(comp.costoClienteIntermedio)} | ${Math.round(comp.costoClienteComplejo)} |\n`;
+            });
+            
+            // Hoja 2: Comparativa de Eficiencia
+            markdown += `\n## Hoja 2: "Comparativa_Costos"\n\n`;
+            markdown += `| Categoría | Nivel | Horas_Humanos | Horas_IA | Costo_Humanos | Costo_IA | Costo_Cliente | Ahorro_Horas | Ahorro_% |\n`;
+            markdown += `|-----------|-------|---------------|----------|---------------|----------|---------------|--------------|----------|\n`;
+            
+            for (const [nombreCat, datosCategoria] of Object.entries(datos.categorias)) {
+                ['Básico', 'Estándar', 'Enterprise'].forEach((nivel, idx) => {
+                    const nivelKey = ['facil', 'intermedio', 'complejo'][idx];
+                    const horasHumanos = datosCategoria.horas[nivelKey];
+                    const horasIA = datosCategoria.horasIA[nivelKey];
+                    const costoHumanos = datosCategoria.costosHumanos[nivelKey];
+                    const costoIA = datosCategoria.costosIA[nivelKey];
+                    const costoCliente = datosCategoria.costosCliente[nivelKey];
+                    const ahorroHoras = horasHumanos - horasIA;
+                    const ahorroPorcentaje = horasHumanos > 0 ? ((ahorroHoras / horasHumanos) * 100).toFixed(1) : 0;
+                    
+                    markdown += `| ${nombreCat} | ${nivel} | ${horasHumanos} | ${horasIA} | ${Math.round(costoHumanos)} | ${Math.round(costoIA)} | ${Math.round(costoCliente)} | ${ahorroHoras} | ${ahorroPorcentaje}% |\n`;
+                });
+            }
+            
+            // Hoja 3: Totales por Categoría
+            markdown += `\n## Hoja 3: "Totales_por_Categoria"\n\n`;
+            markdown += `| Categoría | Items | Horas_IA_Básico | Horas_IA_Estándar | Horas_IA_Enterprise | Costo_Cliente_Básico | Costo_Cliente_Estándar | Costo_Cliente_Enterprise |\n`;
+            markdown += `|-----------|-------|-----------------|-------------------|---------------------|---------------------|----------------------|------------------------|\n`;
+            
+            let totalHorasIA = { facil: 0, intermedio: 0, complejo: 0 };
+            let totalCostosCliente = { facil: 0, intermedio: 0, complejo: 0 };
+            
+            for (const [nombreCat, datosCategoria] of Object.entries(datos.categorias)) {
+                markdown += `| ${nombreCat} | ${datosCategoria.items} | ${datosCategoria.horasIA.facil} | ${datosCategoria.horasIA.intermedio} | ${datosCategoria.horasIA.complejo} | ${Math.round(datosCategoria.costosCliente.facil)} | ${Math.round(datosCategoria.costosCliente.intermedio)} | ${Math.round(datosCategoria.costosCliente.complejo)} |\n`;
+                
+                totalHorasIA.facil += datosCategoria.horasIA.facil;
+                totalHorasIA.intermedio += datosCategoria.horasIA.intermedio;
+                totalHorasIA.complejo += datosCategoria.horasIA.complejo;
+                totalCostosCliente.facil += datosCategoria.costosCliente.facil;
+                totalCostosCliente.intermedio += datosCategoria.costosCliente.intermedio;
+                totalCostosCliente.complejo += datosCategoria.costosCliente.complejo;
+            }
+            
+            markdown += `| **TOTAL GENERAL** | **${datos.componentes.length}** | **${totalHorasIA.facil}** | **${totalHorasIA.intermedio}** | **${totalHorasIA.complejo}** | **${Math.round(totalCostosCliente.facil)}** | **${Math.round(totalCostosCliente.intermedio)}** | **${Math.round(totalCostosCliente.complejo)}** |\n`;
+            
+            // Continuar con el resto del markdown...
+            return markdown;
+        }
+        
+        function generarExcel(datos, config) {
+            const wb = XLSX.utils.book_new();
+            
+            // Hoja 1: Cotización Principal
+            const cotizacionData = [
+                ['ID', 'Categoría', 'Componente', 'Building Blocks', 
+                 'Horas_IA_Básico', 'Horas_IA_Estándar', 'Horas_IA_Enterprise', 
+                 'Costo_Cliente_Básico', 'Costo_Cliente_Estándar', 'Costo_Cliente_Enterprise']
+            ];
+            
+            datos.componentes.forEach(comp => {
+                cotizacionData.push([
+                    comp.id,
+                    comp.categoria,
+                    comp.componente,
+                    comp.buildingBlocks,
+                    comp.horasIAFacil,
+                    comp.horasIAIntermedio,
+                    comp.horasIAComplejo,
+                    Math.round(comp.costoClienteFacil),
+                    Math.round(comp.costoClienteIntermedio),
+                    Math.round(comp.costoClienteComplejo)
+                ]);
+            });
+            
+            const wsCotizacion = XLSX.utils.aoa_to_sheet(cotizacionData);
+            XLSX.utils.book_append_sheet(wb, wsCotizacion, "Cotización_Principal");
+            
+            // Descargar Excel
+            const fecha = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `cotizacion_${config.nombreProyecto.replace(/\s+/g, '_')}_${fecha}.xlsx`);
+        }
+        
+        function generarMarkdown(datos, config) {
+            const markdown = crearContenidoMarkdown(datos, config);
+            
+            // Crear y descargar archivo MD
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fecha = new Date().toISOString().slice(0, 10);
+            a.download = `cotizacion_${config.nombreProyecto.replace(/\s+/g, '_')}_${fecha}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function llenarTemplate(datos, config) {
+            // Template filling logic would go here
+            mostrarMensaje('Funcionalidad de template pendiente de implementación', 'error');
+        }
+        
+        function previsualizarMD() {
+            if (!buildingBlocksData) {
+                mostrarMensaje('Primero carga el archivo JSON', 'error');
+                return;
+            }
+            
+            try {
+                const config = obtenerConfiguracion();
+                const datosEstructurados = procesarBuildingBlocks(buildingBlocksData, config);
+                const markdown = crearContenidoMarkdown(datosEstructurados, config);
+                
+                document.getElementById('preview-content-013').textContent = markdown;
+                document.getElementById('preview-container-012').style.display = 'block';
+                
+                mostrarMensaje('Preview generado', 'success');
+            } catch (error) {
+                mostrarMensaje('Error al generar preview: ' + error.message, 'error');
+            }
+        }
+        
+        function mostrarMensaje(mensaje, tipo) {
+            const div = document.createElement('div');
+            div.className = tipo;
+            div.textContent = mensaje;
+            
+            const container = document.querySelector('.container');
+            container.appendChild(div);
+            
+            setTimeout(() => div.remove(), 5000);
+        }
+    </script>
+</body>
+</html>
