@@ -753,29 +753,49 @@
             });
         }
 
-        // Función simplificada sin autenticación automática
-        function generarGoogleSheets() {
+        // Función automática completa con autenticación Google API
+        async function generarGoogleSheets() {
             if (!buildingBlocksData) {
                 mostrarMensaje('Primero carga el archivo JSON', 'error');
                 return;
             }
 
             try {
+                mostrarMensaje('🔄 Inicializando Google API...', 'info');
+
                 const config = obtenerConfiguracion();
                 const datos = procesarBuildingBlocks(buildingBlocksData, config);
 
-                // Abrir template directamente para copia manual
-                const templateUrl = 'https://docs.google.com/spreadsheets/d/1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI/copy';
-                window.open(templateUrl, '_blank');
+                // Autenticar con Google
+                await authenticateGoogle();
 
-                // Mostrar instrucciones con datos para copiar
-                mostrarInstruccionesGoogleSheets(datos, config);
+                mostrarMensaje('🔄 Creando copia del template...', 'info');
 
-                mostrarMensaje('✅ Template abierto. Sigue las instrucciones para copiar los datos.', 'success');
+                // Crear copia del template automáticamente
+                const templateId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
+                const fecha = new Date().toISOString().slice(0, 10);
+                const nombreArchivo = `Cotización_${config.nombreProyecto.replace(/\s+/g, '_')}_${fecha}`;
+
+                const newSheetId = await copyGoogleSheet(templateId, nombreArchivo);
+
+                mostrarMensaje('🔄 Llenando datos automáticamente...', 'info');
+
+                // Llenar datos automáticamente con inserción/eliminación de filas
+                await populateGoogleSheetSmart(newSheetId, datos, config);
+
+                // Abrir el sheet completado
+                const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
+                window.open(newSheetUrl, '_blank');
+
+                mostrarMensaje('✅ Google Sheet creado y llenado automáticamente!', 'success');
 
             } catch (error) {
                 console.error('Error:', error);
-                mostrarMensaje('❌ Error: ' + error.message, 'error');
+                if (error.message.includes('popup_blocked')) {
+                    mostrarMensaje('❌ Popup bloqueado. Permite popups para este sitio.', 'error');
+                } else {
+                    mostrarMensaje('❌ Error: ' + error.message, 'error');
+                }
             }
         }
 
@@ -881,7 +901,122 @@
             }
         }
 
-        // Llenar datos en Google Sheet automáticamente
+        // Llenar datos en Google Sheet inteligentemente (insertar/eliminar filas)
+        async function populateGoogleSheetSmart(sheetId, datos, config) {
+            console.log('📋 Iniciando llenado inteligente...');
+
+            // Categorizar componentes como pediste
+            const arquitectura = datos.componentes.filter(c =>
+                c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops'
+            );
+            const funcionales = datos.componentes.filter(c =>
+                !['frontend', 'backend', 'devops'].includes(c.categoria)
+            );
+            const noFuncionales = datos.componentes.filter(c =>
+                c.categoria === 'security' || c.categoria === 'performance' || c.categoria === 'monitoring'
+            );
+
+            console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
+
+            // 1. Actualizar datos del proyecto
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: sheetId,
+                range: 'B4:B4',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: [[config.nombreProyecto]]
+                }
+            });
+
+            // 2. Llenar Arquitectura Técnica (empezar en fila 7)
+            await fillSection(sheetId, arquitectura, 7, 'Arquitectura Técnica', config);
+
+            // 3. Llenar Requisitos Funcionales (empezar después de arquitectura)
+            const funcionalStartRow = 7 + Math.max(arquitectura.length, 3) + 4; // +4 para subtotal y espacios
+            await fillSection(sheetId, funcionales, funcionalStartRow, 'Requisitos Funcionales', config);
+
+            // 4. Llenar Requisitos No Funcionales (si existen)
+            if (noFuncionales.length > 0) {
+                const noFuncionalStartRow = funcionalStartRow + Math.max(funcionales.length, 3) + 4;
+                await fillSection(sheetId, noFuncionales, noFuncionalStartRow, 'Requisitos No Funcionales', config);
+            }
+
+            console.log('✅ Llenado inteligente completado');
+        }
+
+        // Función auxiliar para llenar una sección con inserción/eliminación automática
+        async function fillSection(sheetId, items, startRow, sectionName, config) {
+            console.log(`🔄 Llenando sección: ${sectionName} - ${items.length} items desde fila ${startRow}`);
+
+            const minRows = 3; // Mínimo 3 filas por sección
+            const maxRows = 10; // Máximo 10 filas por sección
+            const neededRows = Math.max(items.length, minRows);
+            const actualRows = Math.min(neededRows, maxRows);
+
+            // Si necesitamos más filas, insertar
+            if (items.length > minRows) {
+                const rowsToInsert = Math.min(items.length - minRows, maxRows - minRows);
+                if (rowsToInsert > 0) {
+                    console.log(`➕ Insertando ${rowsToInsert} filas en fila ${startRow + minRows}`);
+                    await gapi.client.sheets.spreadsheets.batchUpdate({
+                        spreadsheetId: sheetId,
+                        resource: {
+                            requests: [{
+                                insertDimension: {
+                                    range: {
+                                        sheetId: 0,
+                                        dimension: 'ROWS',
+                                        startIndex: startRow + minRows - 1,
+                                        endIndex: startRow + minRows - 1 + rowsToInsert
+                                    },
+                                    inheritFromBefore: true
+                                }
+                            }]
+                        }
+                    });
+                }
+            }
+
+            // Llenar datos en las filas
+            const dataRows = [];
+            for (let i = 0; i < actualRows && i < items.length; i++) {
+                const item = items[i];
+                dataRows.push([
+                    item.componente,                                    // ITEM
+                    item.buildingBlocks,                               // DESCRIPCION
+                    1,                                                 // CANTIDAD
+                    Math.round(item.costoClienteIntermedio * 0.6),     // COSTO
+                    Math.round(item.horasIAIntermedio * 100),          // TOKENS
+                    item.horasIAIntermedio,                            // HRS
+                    Math.round(item.costoClienteIntermedio * 0.6),     // COSTO FINAL
+                    1,                                                 // CANTIDAD (humanos)
+                    Math.round(item.costoClienteIntermedio * 0.4),     // COSTO (humanos)
+                    Math.round(item.horasIAIntermedio * 2),            // HRS (humanos)
+                    'Herramientas Dev',                                // SOFTWARES
+                    Math.round(item.costoClienteIntermedio * 0.4),     // COSTO FINAL (humanos)
+                    `${config.markup}%`,                               // MARKUP
+                    Math.round(item.costoClienteIntermedio)            // SUBTOTAL
+                ]);
+            }
+
+            if (dataRows.length > 0) {
+                const range = `A${startRow}:N${startRow + dataRows.length - 1}`;
+                console.log(`📝 Escribiendo datos en rango: ${range}`);
+
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: sheetId,
+                    range: range,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: dataRows
+                    }
+                });
+            }
+
+            console.log(`✅ Sección ${sectionName} completada`);
+        }
+
+        // Llenar datos en Google Sheet automáticamente (función original como backup)
         async function populateGoogleSheet(sheetId, datos, config) {
             const values = [];
             
