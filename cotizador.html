@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador Excel + MD desde Building Blocks</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -167,6 +168,8 @@
         
         <div style="text-align: center;">
             <button onclick="generarArchivos()">📊 Generar Excel + MD</button>
+            <button onclick="generarArchivosConN8N()">🤖 Generar con AI (n8n)</button>
+            <button onclick="generarGoogleSheets()">📋 Generar Google Sheets</button>
             <button onclick="previsualizarMD()">👁️ Preview MD</button>
         </div>
         
@@ -435,15 +438,106 @@
         function generarExcel(datos, config) {
             const wb = XLSX.utils.book_new();
             
-            // Hoja 1: Cotización Principal
-            const cotizacionData = [
+            // Función para categorizar building blocks
+            function categorizarComponentes(componentes) {
+                const categorias = {
+                    arquitectura: [],
+                    funcionales: [],
+                    noFuncionales: []
+                };
+                
+                componentes.forEach(comp => {
+                    // Mapeo basado en categorías existentes
+                    if (comp.categoria === 'frontend' || comp.categoria === 'backend' || comp.categoria === 'devops') {
+                        categorias.arquitectura.push(comp);
+                    } else if (comp.categoria === 'ui' || comp.categoria === 'features' || comp.buildingBlocks.includes('user') || comp.buildingBlocks.includes('interface')) {
+                        categorias.funcionales.push(comp);
+                    } else {
+                        categorias.noFuncionales.push(comp);
+                    }
+                });
+                
+                return categorias;
+            }
+            
+            const categoriasData = categorizarComponentes(datos.componentes);
+            const cotizacionData = [];
+            
+            // Header del documento con formato exacto del template
+            cotizacionData.push(['WAZA', '', '', '', '', '', '', '', '', '', '', '', '', 'COTIZACIÓN', 'MEXICO']);
+            cotizacionData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '3 DE SEPTIEMBRE 2025']);
+            cotizacionData.push(['CLIENTE:', '', '', '', '', '', '', '', '', '', 'MXN']);
+            cotizacionData.push(['PROYECTO:', config.nombreProyecto || 'PLATAFORMA DE STREAMING']);
+            cotizacionData.push(['EJECUTIVO:', '', '', '', '', '', '', '', '', '', 'JOSÉ ANTONIO MANGARA']);
+            cotizacionData.push(['']); // Línea vacía
+            
+            // Función para agregar una sección
+            function agregarSeccion(nombre, componentes, color) {
+                // Header de la sección con formato exacto
+                cotizacionData.push([nombre, '', '', '', '', '', '', '', '', '', '', '', '', '', 'PRECIO']);
+                cotizacionData.push(['ITEM', 'DESCRIPCIÓN', 'CANTIDAD', 'COSTO', 'TOKENS', 'HRS', 'COSTO FINAL', 'CANTIDAD', 'COSTO', 'HRS', 'SOFTWARES', 'COSTO FINAL', 'MARKUP', 'SUBTOTAL']);
+                
+                let subtotal = 0;
+                componentes.forEach((comp, index) => {
+                    const costoFinal = Math.round(comp.costoClienteIntermedio);
+                    subtotal += costoFinal;
+                    
+                    cotizacionData.push([
+                        comp.componente,
+                        comp.buildingBlocks,
+                        1, // Cantidad
+                        Math.round(comp.costoClienteIntermedio * 0.6), // Costo base
+                        Math.round(comp.horasIAIntermedio * 100), // Tokens simulados
+                        comp.horasIAIntermedio,
+                        Math.round(comp.costoClienteIntermedio * 0.6),
+                        1, // Cantidad humanos
+                        Math.round(comp.costoClienteIntermedio * 0.4), // Costo humanos
+                        Math.round(comp.horasIAIntermedio * 2), // Horas humanas (doble que IA)
+                        'Herramientas Dev',
+                        Math.round(comp.costoClienteIntermedio * 0.4),
+                        config.markupCliente + '%',
+                        costoFinal
+                    ]);
+                });
+                
+                // Subtotal de la sección
+                cotizacionData.push(['SUBTOTAL', '', '', '', '', '', '', '', '', '', '', '', '', subtotal]);
+                cotizacionData.push(['']); // Línea vacía
+                
+                return subtotal;
+            }
+            
+            // Agregar las tres secciones
+            let totalGeneral = 0;
+            totalGeneral += agregarSeccion('Arquitectura Técnica', categoriasData.arquitectura, 'blue');
+            totalGeneral += agregarSeccion('Requisitos Funcionales', categoriasData.funcionales, 'blue');
+            totalGeneral += agregarSeccion('Requisitos No Funcionales', categoriasData.noFuncionales, 'blue');
+            
+            // Total general
+            cotizacionData.push(['GRAN TOTAL', '', '', '', '', '', '', '', '', '', '', '', '', totalGeneral]);
+            cotizacionData.push(['']); // Línea vacía
+            cotizacionData.push(['NOTAS:']);
+            cotizacionData.push(['']);
+            cotizacionData.push(['Alcance & cambios: Es una estimación, si cambian requerimientos/técnicas, cambian costo y tiempo; se tomarán los datos vigentes']);
+            cotizacionData.push(['Moneda $ MXN. Impuestos no incluidos (IVA, sí hay cargos del IVA), si hay cargo en USD (nacional), se podrán al tipo de cambio vigente.']);
+            cotizacionData.push(['']);
+            cotizacionData.push(['Responsabilidades del cliente: Entregar información, accesos, aprobaciones, API keys, dominio/DNS y permisos a tiempo.']);
+            cotizacionData.push(['Roles & migracion: Incluye migracion basica desde DirectAdmin /Plesk/WhmlX+cintentrix especiales de codigos vivos']);
+            cotizacionData.push(['cargos no incluyen instalaciones, ajustes de forma, propuestas de cambio y entitar otros']);
+            cotizacionData.push(['Sugeridos: cron entregar plan estrategico, legalVox de informacion externa de datos, propuestas de segway y verificar tiempos']);
+            
+            const wsCotizacion = XLSX.utils.aoa_to_sheet(cotizacionData);
+            XLSX.utils.book_append_sheet(wb, wsCotizacion, "Cotización_WAZA");
+            
+            // Tab 2: Estructura detallada original
+            const detalladaData = [
                 ['ID', 'Categoría', 'Componente', 'Building Blocks', 
                  'Horas_IA_Básico', 'Horas_IA_Estándar', 'Horas_IA_Enterprise', 
                  'Costo_Cliente_Básico', 'Costo_Cliente_Estándar', 'Costo_Cliente_Enterprise']
             ];
             
             datos.componentes.forEach(comp => {
-                cotizacionData.push([
+                detalladaData.push([
                     comp.id,
                     comp.categoria,
                     comp.componente,
@@ -457,8 +551,8 @@
                 ]);
             });
             
-            const wsCotizacion = XLSX.utils.aoa_to_sheet(cotizacionData);
-            XLSX.utils.book_append_sheet(wb, wsCotizacion, "Cotización_Principal");
+            const wsDetallada = XLSX.utils.aoa_to_sheet(detalladaData);
+            XLSX.utils.book_append_sheet(wb, wsDetallada, "Cotización_Detallada");
             
             // Descargar Excel
             const fecha = new Date().toISOString().slice(0, 10);
@@ -502,6 +596,431 @@
             } catch (error) {
                 mostrarMensaje('Error al generar preview: ' + error.message, 'error');
             }
+        }
+        
+        // n8n Integration Function
+        async function generarArchivosConN8N() {
+            if (!buildingBlocksData) {
+                mostrarMensaje('Primero carga el archivo JSON', 'error');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('Enviando datos para procesamiento con AI...', 'info');
+                
+                const config = obtenerConfiguracion();
+                const payload = {
+                    building_blocks: buildingBlocksData,
+                    config: config
+                };
+                
+                // Budget processor API URL
+                const budgetApiUrl = 'http://localhost:3001/budget-quote';
+                
+                const response = await fetch(budgetApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    mostrarMensaje('✅ Cotización generada exitosamente con AI!', 'success');
+                    
+                    // Display the results
+                    displayN8NResults(result.data);
+                    
+                    // Download files if available
+                    if (result.data.markdown) {
+                        downloadFile(result.data.markdown, result.data.filename + '.md', 'text/markdown');
+                    }
+                    if (result.data.csv) {
+                        downloadFile(result.data.csv, result.data.filename + '.csv', 'text/csv');
+                    }
+                } else {
+                    throw new Error(result.message || 'Error procesando datos');
+                }
+                
+            } catch (error) {
+                console.error('Error procesando:', error);
+                mostrarMensaje('Error procesando: ' + error.message, 'error');
+            }
+        }
+        
+        function displayN8NResults(data) {
+            // Create results display area
+            let resultsDiv = document.getElementById('n8n-results-014');
+            if (!resultsDiv) {
+                resultsDiv = document.createElement('div');
+                resultsDiv.id = 'n8n-results-014';
+                resultsDiv.className = 'preview';
+                resultsDiv.style.display = 'block';
+                document.querySelector('.container').appendChild(resultsDiv);
+            }
+            
+            const processed = data.processed;
+            let html = `
+                <h3>🤖 Resultados Procesados con AI</h3>
+                <h4>Proyecto: ${processed.project_name}</h4>
+                <p><strong>Generado:</strong> ${new Date(processed.generated_at).toLocaleString()}</p>
+                
+                <h4>💰 Costos Totales</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <tr style="background: #f0f0f0;">
+                        <th style="border: 1px solid #ddd; padding: 8px;">Nivel</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Costo Total</th>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">Básico</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">$${Math.round(processed.totals.basic).toLocaleString()} MXN</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">Estándar</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">$${Math.round(processed.totals.standard).toLocaleString()} MXN</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">Enterprise</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">$${Math.round(processed.totals.enterprise).toLocaleString()} MXN</td>
+                    </tr>
+                </table>
+                
+                <h4>📋 Categorías</h4>
+            `;
+            
+            for (const [name, category] of Object.entries(processed.categories)) {
+                html += `
+                    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        <h5>${name}</h5>
+                        <p><strong>Items:</strong> ${category.items}</p>
+                        <p><strong>Horas:</strong> ${category.hours.basic.toFixed(1)} / ${category.hours.standard.toFixed(1)} / ${category.hours.enterprise.toFixed(1)}</p>
+                        <p><strong>Costos:</strong> $${Math.round(category.costs.basic).toLocaleString()} / $${Math.round(category.costs.standard).toLocaleString()} / $${Math.round(category.costs.enterprise).toLocaleString()} MXN</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <h4>⚙️ Configuración Aplicada</h4>
+                <ul>
+                    <li><strong>Eficiencia IA:</strong> ${processed.config.eficienciaIA || 35}%</li>
+                    <li><strong>Markup:</strong> ${processed.config.markup || 40}%</li>
+                    <li><strong>Tarifa IA:</strong> $${processed.config.tarifaIA || 300} MXN/hora</li>
+                    <li><strong>Factor PM:</strong> ${processed.config.factorPM || 18}%</li>
+                    <li><strong>Factor Testing:</strong> ${processed.config.factorTesting || 12}%</li>
+                    <li><strong>Factor Contingencia:</strong> ${processed.config.factorContingencia || 20}%</li>
+                </ul>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Google Sheets API configuration
+        const GOOGLE_CONFIG = {
+            apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
+            clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
+            discoveryDocs: [
+                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+            ],
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file'
+        };
+
+        let isGoogleAPIReady = false;
+
+        // Inicializar Google API
+        function initializeGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                gapi.load('client:auth2', async () => {
+                    try {
+                        await gapi.client.init({
+                            apiKey: GOOGLE_CONFIG.apiKey,
+                            clientId: GOOGLE_CONFIG.clientId,
+                            discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
+                            scope: GOOGLE_CONFIG.scopes
+                        });
+                        isGoogleAPIReady = true;
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            });
+        }
+
+        // Función simplificada sin autenticación automática
+        function generarGoogleSheets() {
+            if (!buildingBlocksData) {
+                mostrarMensaje('Primero carga el archivo JSON', 'error');
+                return;
+            }
+
+            try {
+                const config = obtenerConfiguracion();
+                const datos = procesarBuildingBlocks(buildingBlocksData, config);
+
+                // Abrir template directamente para copia manual
+                const templateUrl = 'https://docs.google.com/spreadsheets/d/1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI/copy';
+                window.open(templateUrl, '_blank');
+
+                // Mostrar instrucciones con datos para copiar
+                mostrarInstruccionesGoogleSheets(datos, config);
+
+                mostrarMensaje('✅ Template abierto. Sigue las instrucciones para copiar los datos.', 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // Autenticar con Google
+        async function authenticateGoogle() {
+            return new Promise((resolve, reject) => {
+                console.log('Cargando gapi client...');
+                console.log('Dominio actual:', window.location.origin);
+                
+                gapi.load('client:auth2', {
+                    callback: async () => {
+                        try {
+                            console.log('GAPI cargado, inicializando...');
+                            console.log('Config:', GOOGLE_CONFIG);
+                            
+                            const initConfig = {
+                                apiKey: GOOGLE_CONFIG.apiKey,
+                                clientId: GOOGLE_CONFIG.clientId,
+                                discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
+                                scope: GOOGLE_CONFIG.scopes
+                            };
+                            
+                            console.log('Configuración de inicialización:', initConfig);
+                            
+                            const initResult = await gapi.client.init(initConfig);
+                            console.log('Resultado de inicialización:', initResult);
+                            
+                            console.log('Google API inicializada exitosamente');
+                            const authInstance = gapi.auth2.getAuthInstance();
+                            console.log('Auth instance obtenida:', authInstance);
+                            
+                            const isSignedIn = authInstance.isSignedIn.get();
+                            console.log('¿Usuario ya autenticado?', isSignedIn);
+                            
+                            if (!isSignedIn) {
+                                console.log('Solicitando login...');
+                                try {
+                                    console.log('Llamando a signIn()...');
+                                    const user = await authInstance.signIn({
+                                        prompt: 'select_account'
+                                    });
+                                    console.log('Login exitoso:', user.getBasicProfile().getName());
+                                } catch (loginError) {
+                                    console.error('Error en login:', loginError);
+                                    if (loginError.error === 'popup_blocked_by_browser') {
+                                        reject(new Error('Popup bloqueado por el navegador. Permite popups para este sitio.'));
+                                    } else if (loginError.error === 'access_denied') {
+                                        reject(new Error('Acceso denegado por el usuario.'));
+                                    } else {
+                                        reject(loginError);
+                                    }
+                                    return;
+                                }
+                            }
+                            
+                            console.log('Autenticación completada exitosamente');
+                            resolve();
+                            
+                        } catch (error) {
+                            console.error('Error en inicialización:', error);
+                            console.error('Detalles del error:', error.details);
+                            
+                            if (error.error === 'idpiframe_initialization_failed') {
+                                reject(new Error('Error de inicialización. Verifica que el dominio esté autorizado en Google Cloud Console.'));
+                            } else {
+                                reject(error);
+                            }
+                        }
+                    },
+                    onerror: (error) => {
+                        console.error('Error cargando GAPI:', error);
+                        reject(new Error('Error cargando Google API'));
+                    }
+                });
+            });
+        }
+
+        // Crear copia del template
+        async function copyGoogleSheet(templateId, newName) {
+            try {
+                console.log('Copiando template:', templateId, 'con nombre:', newName);
+                
+                const response = await gapi.client.request({
+                    path: `https://www.googleapis.com/drive/v3/files/${templateId}/copy`,
+                    method: 'POST',
+                    body: {
+                        name: newName
+                    }
+                });
+                
+                console.log('Respuesta de copia:', response);
+                
+                if (response.result && response.result.id) {
+                    console.log('Copia creada exitosamente con ID:', response.result.id);
+                    return response.result.id;
+                } else {
+                    throw new Error('No se pudo obtener ID del archivo copiado');
+                }
+                
+            } catch (error) {
+                console.error('Error creando copia:', error);
+                throw error;
+            }
+        }
+
+        // Llenar datos en Google Sheet automáticamente
+        async function populateGoogleSheet(sheetId, datos, config) {
+            const values = [];
+            
+            // Categorizar componentes
+            const arquitectura = datos.componentes.filter(c => c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops');
+            const funcionales = datos.componentes.filter(c => !['frontend', 'backend', 'devops'].includes(c.categoria));
+            
+            // Llenar sección Arquitectura Técnica (empezar en fila 8)
+            let currentRow = 8;
+            arquitectura.forEach(comp => {
+                values.push({
+                    range: `A${currentRow}:N${currentRow}`,
+                    values: [[
+                        comp.componente,
+                        comp.buildingBlocks,
+                        1,
+                        Math.round(comp.costoClienteIntermedio * 0.6),
+                        Math.round(comp.horasIAIntermedio * 100),
+                        comp.horasIAIntermedio,
+                        Math.round(comp.costoClienteIntermedio * 0.6),
+                        1,
+                        Math.round(comp.costoClienteIntermedio * 0.4),
+                        Math.round(comp.horasIAIntermedio * 2),
+                        'Herramientas Dev',
+                        Math.round(comp.costoClienteIntermedio * 0.4),
+                        config.markupCliente + '%',
+                        Math.round(comp.costoClienteIntermedio)
+                    ]]
+                });
+                currentRow++;
+            });
+            
+            // Saltar a sección Requisitos Funcionales (aproximadamente fila 20)
+            currentRow = 20;
+            funcionales.forEach(comp => {
+                values.push({
+                    range: `A${currentRow}:N${currentRow}`,
+                    values: [[
+                        comp.componente,
+                        comp.buildingBlocks,
+                        1,
+                        Math.round(comp.costoClienteIntermedio * 0.6),
+                        Math.round(comp.horasIAIntermedio * 100),
+                        comp.horasIAIntermedio,
+                        Math.round(comp.costoClienteIntermedio * 0.6),
+                        1,
+                        Math.round(comp.costoClienteIntermedio * 0.4),
+                        Math.round(comp.horasIAIntermedio * 2),
+                        'Herramientas Dev',
+                        Math.round(comp.costoClienteIntermedio * 0.4),
+                        config.markupCliente + '%',
+                        Math.round(comp.costoClienteIntermedio)
+                    ]]
+                });
+                currentRow++;
+            });
+
+            // Actualizar datos del proyecto
+            values.push({
+                range: 'B4:B4',
+                values: [[config.nombreProyecto]]
+            });
+
+            // Enviar todos los datos de una vez
+            const batchUpdateRequest = {
+                valueInputOption: 'RAW',
+                data: values
+            };
+
+            await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                spreadsheetId: sheetId,
+                resource: batchUpdateRequest
+            });
+        }
+
+        // Mostrar instrucciones y datos para copiar/pegar
+        function mostrarInstruccionesGoogleSheets(datos, config) {
+            const instrucciones = document.createElement('div');
+            instrucciones.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 1000;
+                max-width: 80%;
+                max-height: 80%;
+                overflow-y: auto;
+            `;
+            
+            instrucciones.innerHTML = `
+                <h3>📋 Instrucciones para Google Sheets</h3>
+                <p><strong>1.</strong> Se abrió una nueva ventana con tu template</p>
+                <p><strong>2.</strong> Haz clic en "Crear una copia"</p>
+                <p><strong>3.</strong> Nómbrala: <code>Cotización_${config.nombreProyecto}_${new Date().toISOString().slice(0, 10)}</code></p>
+                <p><strong>4.</strong> Usa los datos de abajo para llenar las celdas:</p>
+                
+                <h4>🏗️ Arquitectura Técnica:</h4>
+                <textarea readonly style="width: 100%; height: 100px;">
+${datos.componentes.filter(c => c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops')
+    .map(c => `${c.componente}\t${c.buildingBlocks}\t1\t${Math.round(c.costoClienteIntermedio * 0.6)}\t${Math.round(c.horasIAIntermedio * 100)}\t${c.horasIAIntermedio}\t${Math.round(c.costoClienteIntermedio * 0.6)}\t1\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${Math.round(c.horasIAIntermedio * 2)}\tHerramientas Dev\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${config.markupCliente}%\t${Math.round(c.costoClienteIntermedio)}`)
+    .join('\n')}
+                </textarea>
+                
+                <h4>⚙️ Requisitos Funcionales:</h4>
+                <textarea readonly style="width: 100%; height: 100px;">
+${datos.componentes.filter(c => c.categoria !== 'frontend' && c.categoria !== 'backend' && c.categoria !== 'devops')
+    .map(c => `${c.componente}\t${c.buildingBlocks}\t1\t${Math.round(c.costoClienteIntermedio * 0.6)}\t${Math.round(c.horasIAIntermedio * 100)}\t${c.horasIAIntermedio}\t${Math.round(c.costoClienteIntermedio * 0.6)}\t1\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${Math.round(c.horasIAIntermedio * 2)}\tHerramientas Dev\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${config.markupCliente}%\t${Math.round(c.costoClienteIntermedio)}`)
+    .join('\n')}
+                </textarea>
+                
+                <p><strong>5.</strong> Selecciona y copia cada sección</p>
+                <p><strong>6.</strong> Pega en las filas correspondientes del Google Sheet</p>
+                
+                <button onclick="this.parentElement.remove()" style="
+                    background: #4285f4;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin-top: 10px;
+                ">Cerrar</button>
+            `;
+            
+            document.body.appendChild(instrucciones);
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
         }
         
         function mostrarMensaje(mensaje, tipo) {

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google API Simple</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Google Sheets API</h1>
+    <p>Script básico para probar autenticación con Google Sheets</p>
+
+    <div>
+        <button onclick="testStep1()">1️⃣ Test gapi Load</button>
+        <button onclick="testStep2()">2️⃣ Test Init API</button>
+        <button onclick="testStep2Simple()">2️⃣B Test Init Simple</button>
+        <button onclick="testStep3()">3️⃣ Test Auth</button>
+        <button onclick="testStep4()">4️⃣ Test Template Copy</button>
+        <button onclick="clearLog()">🧹 Clear Log</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="log" class="log"></div>
+
+    <script>
+        const GOOGLE_CONFIG = {
+            apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
+            clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
+            discoveryDocs: [
+                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+            ],
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file'
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        // Test 1: Verificar si gapi se carga
+        function testStep1() {
+            log('=== TEST 1: Verificando carga de gapi ===');
+
+            if (typeof gapi === 'undefined') {
+                log('❌ ERROR: gapi no está disponible');
+                showStatus('gapi no cargado', 'error');
+                return;
+            }
+
+            log('✅ gapi está disponible');
+            log('✅ Dominio actual: ' + window.location.origin);
+            showStatus('gapi cargado correctamente', 'success');
+        }
+
+        // Test 2: Inicializar API
+        function testStep2() {
+            log('=== TEST 2: Inicializando Google API ===');
+
+            if (typeof gapi === 'undefined') {
+                log('❌ ERROR: Ejecuta primero Test 1');
+                showStatus('Ejecuta Test 1 primero', 'error');
+                return;
+            }
+
+            log('🔄 Iniciando gapi.load...');
+            gapi.load('client:auth2', {
+                callback: async () => {
+                    try {
+                        log('✅ gapi.load ejecutado exitosamente');
+                        log('🔄 Ejecutando gapi.client.init...');
+
+                        // Agregar timeout para detectar si se cuelga
+                        const initPromise = gapi.client.init(GOOGLE_CONFIG);
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('TIMEOUT: gapi.client.init tomó más de 10 segundos')), 10000);
+                        });
+
+                        const initResult = await Promise.race([initPromise, timeoutPromise]);
+                        log('✅ gapi.client.init completado');
+                        log('📋 Resultado de init: ' + JSON.stringify(initResult));
+
+                        // Verificar que client esté inicializado
+                        if (gapi.client) {
+                            log('✅ gapi.client está disponible');
+                        } else {
+                            log('❌ ERROR: gapi.client no está disponible');
+                        }
+
+                        // Verificar que auth2 esté inicializado
+                        if (gapi.auth2) {
+                            log('✅ gapi.auth2 está disponible');
+
+                            const authInstance = gapi.auth2.getAuthInstance();
+                            if (authInstance) {
+                                log('✅ Auth instance obtenida correctamente');
+                                log('📋 Auth instance tipo: ' + typeof authInstance);
+
+                                const isSignedIn = authInstance.isSignedIn.get();
+                                log('📋 Usuario ya autenticado: ' + isSignedIn);
+
+                                // Verificar métodos disponibles
+                                log('📋 Métodos disponibles en authInstance:');
+                                log('   - signIn: ' + (typeof authInstance.signIn));
+                                log('   - isSignedIn: ' + (typeof authInstance.isSignedIn));
+                                log('   - currentUser: ' + (typeof authInstance.currentUser));
+
+                                showStatus('API inicializada correctamente', 'success');
+                            } else {
+                                log('❌ ERROR: No se pudo obtener auth instance');
+                                showStatus('Error obteniendo auth instance', 'error');
+                            }
+                        } else {
+                            log('❌ ERROR: gapi.auth2 no está disponible');
+                            showStatus('gapi.auth2 no disponible', 'error');
+                        }
+
+                        log('📋 Config usada: ' + JSON.stringify(GOOGLE_CONFIG, null, 2));
+
+                    } catch (error) {
+                        log('❌ ERROR en inicialización: ' + error.message);
+                        log('📋 Error tipo: ' + error.name);
+                        log('📋 Error detalles: ' + error.details);
+                        log('📋 Error completo: ' + JSON.stringify(error, null, 2));
+                        showStatus('Error en inicialización: ' + error.message, 'error');
+                    }
+                },
+                onerror: (error) => {
+                    log('❌ ERROR en gapi.load: ' + JSON.stringify(error));
+                    showStatus('Error cargando gapi', 'error');
+                }
+            });
+        }
+
+        // Test 2B: Inicialización simplificada
+        function testStep2Simple() {
+            log('=== TEST 2B: Inicialización SIMPLIFICADA ===');
+
+            if (typeof gapi === 'undefined') {
+                log('❌ ERROR: Ejecuta primero Test 1');
+                showStatus('Ejecuta Test 1 primero', 'error');
+                return;
+            }
+
+            // Configuración más simple - solo lo esencial
+            const SIMPLE_CONFIG = {
+                apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
+                clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
+                scope: 'https://www.googleapis.com/auth/drive.file'
+            };
+
+            log('🔄 Probando configuración simplificada...');
+            log('📋 Config simple: ' + JSON.stringify(SIMPLE_CONFIG, null, 2));
+
+            gapi.load('client:auth2', {
+                callback: async () => {
+                    try {
+                        log('✅ gapi.load ejecutado');
+                        log('🔄 Ejecutando init con configuración simple...');
+
+                        // Timeout más corto para config simple
+                        const initPromise = gapi.client.init(SIMPLE_CONFIG);
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('TIMEOUT: Config simple falló en 5 segundos')), 5000);
+                        });
+
+                        const initResult = await Promise.race([initPromise, timeoutPromise]);
+                        log('✅ Init simple completado!');
+
+                        const authInstance = gapi.auth2.getAuthInstance();
+                        if (authInstance) {
+                            log('✅ Auth instance obtenida con config simple');
+                            showStatus('Config simple funcionando', 'success');
+                        } else {
+                            log('❌ Auth instance falló con config simple');
+                            showStatus('Auth instance falló', 'error');
+                        }
+
+                    } catch (error) {
+                        log('❌ ERROR en config simple: ' + error.message);
+
+                        if (error.message.includes('TIMEOUT')) {
+                            log('💡 DIAGNÓSTICO: API Key o Client ID pueden estar incorrectos');
+                            log('💡 O el dominio file:// no está autorizado');
+                        }
+
+                        showStatus('Config simple falló: ' + error.message, 'error');
+                    }
+                },
+                onerror: (error) => {
+                    log('❌ ERROR en gapi.load simple: ' + JSON.stringify(error));
+                    showStatus('Error cargando gapi simple', 'error');
+                }
+            });
+        }
+
+        // Test 3: Autenticación
+        function testStep3() {
+            log('=== TEST 3: Probando autenticación ===');
+
+            try {
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (!authInstance) {
+                    log('❌ ERROR: Ejecuta primero Test 2');
+                    showStatus('Ejecuta Test 2 primero', 'error');
+                    return;
+                }
+
+                const isSignedIn = authInstance.isSignedIn.get();
+                log('📋 Estado actual de login: ' + isSignedIn);
+
+                if (!isSignedIn) {
+                    log('🔄 Iniciando proceso de login...');
+                    showStatus('Iniciando login...', 'info');
+
+                    authInstance.signIn({
+                        prompt: 'select_account'
+                    }).then(user => {
+                        log('✅ Login exitoso!');
+                        log('📋 Usuario: ' + user.getBasicProfile().getName());
+                        log('📋 Email: ' + user.getBasicProfile().getEmail());
+                        showStatus('Autenticación exitosa', 'success');
+                    }).catch(error => {
+                        log('❌ ERROR en login: ' + error.error);
+                        log('📋 Detalles: ' + JSON.stringify(error, null, 2));
+
+                        if (error.error === 'popup_blocked_by_browser') {
+                            showStatus('Popup bloqueado - permite popups', 'error');
+                        } else if (error.error === 'access_denied') {
+                            showStatus('Acceso denegado por usuario', 'error');
+                        } else {
+                            showStatus('Error en autenticación: ' + error.error, 'error');
+                        }
+                    });
+                } else {
+                    const user = authInstance.currentUser.get();
+                    log('✅ Ya está autenticado');
+                    log('📋 Usuario: ' + user.getBasicProfile().getName());
+                    showStatus('Ya autenticado', 'success');
+                }
+
+            } catch (error) {
+                log('❌ ERROR en test de auth: ' + error.message);
+                showStatus('Error en test de autenticación', 'error');
+            }
+        }
+
+        // Test 4: Probar copia de template
+        function testStep4() {
+            log('=== TEST 4: Probando copia de template ===');
+
+            try {
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (!authInstance || !authInstance.isSignedIn.get()) {
+                    log('❌ ERROR: Ejecuta primero Test 3 (autenticación)');
+                    showStatus('Autentica primero (Test 3)', 'error');
+                    return;
+                }
+
+                const templateId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
+                const newName = 'TEST_Cotización_' + new Date().toISOString().slice(0, 16);
+
+                log('🔄 Intentando copiar template...');
+                log('📋 Template ID: ' + templateId);
+                log('📋 Nuevo nombre: ' + newName);
+
+                showStatus('Copiando template...', 'info');
+
+                gapi.client.request({
+                    path: `https://www.googleapis.com/drive/v3/files/${templateId}/copy`,
+                    method: 'POST',
+                    body: {
+                        name: newName
+                    }
+                }).then(response => {
+                    log('✅ Copia exitosa!');
+                    log('📋 Nuevo ID: ' + response.result.id);
+                    log('📋 URL: https://docs.google.com/spreadsheets/d/' + response.result.id);
+
+                    // Abrir el nuevo sheet
+                    window.open('https://docs.google.com/spreadsheets/d/' + response.result.id, '_blank');
+
+                    showStatus('Template copiado exitosamente', 'success');
+
+                }).catch(error => {
+                    log('❌ ERROR copiando template: ' + JSON.stringify(error, null, 2));
+                    showStatus('Error copiando template', 'error');
+                });
+
+            } catch (error) {
+                log('❌ ERROR en test de copia: ' + error.message);
+                showStatus('Error en test de copia', 'error');
+            }
+        }
+
+        // Inicialización automática al cargar
+        window.onload = function() {
+            log('🚀 Test Google API cargado');
+            log('📋 URL actual: ' + window.location.href);
+            showStatus('Listo para testing', 'info');
+        };
+    </script>
+</body>
+</html>

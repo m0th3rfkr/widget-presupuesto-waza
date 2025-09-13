@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "version": "2.0",
+    "created": "2025-09-12",
+    "description": "Sample building blocks for testing"
+  },
+  "categories": {
+    "frontend": {
+      "name": "Frontend Development",
+      "description": "User interface and client-side development",
+      "building_blocks": {
+        "ui_components": {
+          "name": "UI Components Library",
+          "description": "Reusable React components",
+          "hours": {
+            "facil": 40,
+            "intermedio": 80,
+            "complejo": 120
+          },
+          "function_points": {
+            "facil": 20,
+            "intermedio": 35,
+            "complejo": 50
+          }
+        },
+        "responsive_design": {
+          "name": "Responsive Design Implementation",
+          "description": "Mobile-first responsive layouts",
+          "hours": {
+            "facil": 20,
+            "intermedio": 40,
+            "complejo": 60
+          },
+          "function_points": {
+            "facil": 15,
+            "intermedio": 25,
+            "complejo": 35
+          }
+        },
+        "state_management": {
+          "name": "State Management (Redux/Context)",
+          "description": "Global state management setup",
+          "hours": {
+            "facil": 30,
+            "intermedio": 60,
+            "complejo": 100
+          },
+          "function_points": {
+            "facil": 25,
+            "intermedio": 40,
+            "complejo": 60
+          }
+        }
+      }
+    },
+    "backend": {
+      "name": "Backend Development",
+      "description": "Server-side logic and APIs",
+      "building_blocks": {
+        "api_development": {
+          "name": "REST API Development",
+          "description": "Complete REST API with CRUD operations",
+          "hours": {
+            "facil": 50,
+            "intermedio": 100,
+            "complejo": 160
+          },
+          "function_points": {
+            "facil": 30,
+            "intermedio": 50,
+            "complejo": 80
+          }
+        },
+        "database_design": {
+          "name": "Database Design & Setup",
+          "description": "Database schema and optimization",
+          "hours": {
+            "facil": 25,
+            "intermedio": 50,
+            "complejo": 80
+          },
+          "function_points": {
+            "facil": 20,
+            "intermedio": 35,
+            "complejo": 55
+          }
+        },
+        "authentication": {
+          "name": "User Authentication System",
+          "description": "JWT auth with role-based access",
+          "hours": {
+            "facil": 35,
+            "intermedio": 70,
+            "complejo": 110
+          },
+          "function_points": {
+            "facil": 25,
+            "intermedio": 45,
+            "complejo": 70
+          }
+        }
+      }
+    },
+    "devops": {
+      "name": "DevOps & Infrastructure",
+      "description": "Deployment and infrastructure setup",
+      "building_blocks": {
+        "ci_cd_pipeline": {
+          "name": "CI/CD Pipeline Setup",
+          "description": "Automated testing and deployment",
+          "hours": {
+            "facil": 20,
+            "intermedio": 40,
+            "complejo": 70
+          },
+          "function_points": {
+            "facil": 15,
+            "intermedio": 30,
+            "complejo": 50
+          }
+        },
+        "cloud_deployment": {
+          "name": "Cloud Infrastructure",
+          "description": "AWS/Azure deployment setup",
+          "hours": {
+            "facil": 30,
+            "intermedio": 60,
+            "complejo": 100
+          },
+          "function_points": {
+            "facil": 20,
+            "intermedio": 40,
+            "complejo": 65
+          }
+        }
+      }
+    }
+  }
+}
