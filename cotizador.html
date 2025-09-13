@@ -762,12 +762,17 @@
 
             try {
                 mostrarMensaje('🔄 Inicializando Google API...', 'info');
+                console.log('🔄 Iniciando proceso automático completo...');
 
                 const config = obtenerConfiguracion();
                 const datos = procesarBuildingBlocks(buildingBlocksData, config);
 
+                console.log('📊 Datos procesados:', datos.componentes.length, 'componentes');
+
                 // Autenticar con Google
+                console.log('🔐 Iniciando autenticación...');
                 await authenticateGoogle();
+                console.log('✅ Autenticación completada');
 
                 mostrarMensaje('🔄 Creando copia del template...', 'info');
 
@@ -1092,61 +1097,7 @@
             });
         }
 
-        // Mostrar instrucciones y datos para copiar/pegar
-        function mostrarInstruccionesGoogleSheets(datos, config) {
-            const instrucciones = document.createElement('div');
-            instrucciones.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                z-index: 1000;
-                max-width: 80%;
-                max-height: 80%;
-                overflow-y: auto;
-            `;
-            
-            instrucciones.innerHTML = `
-                <h3>📋 Instrucciones para Google Sheets</h3>
-                <p><strong>1.</strong> Se abrió una nueva ventana con tu template</p>
-                <p><strong>2.</strong> Haz clic en "Crear una copia"</p>
-                <p><strong>3.</strong> Nómbrala: <code>Cotización_${config.nombreProyecto}_${new Date().toISOString().slice(0, 10)}</code></p>
-                <p><strong>4.</strong> Usa los datos de abajo para llenar las celdas:</p>
-                
-                <h4>🏗️ Arquitectura Técnica:</h4>
-                <textarea readonly style="width: 100%; height: 100px;">
-${datos.componentes.filter(c => c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops')
-    .map(c => `${c.componente}\t${c.buildingBlocks}\t1\t${Math.round(c.costoClienteIntermedio * 0.6)}\t${Math.round(c.horasIAIntermedio * 100)}\t${c.horasIAIntermedio}\t${Math.round(c.costoClienteIntermedio * 0.6)}\t1\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${Math.round(c.horasIAIntermedio * 2)}\tHerramientas Dev\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${config.markupCliente}%\t${Math.round(c.costoClienteIntermedio)}`)
-    .join('\n')}
-                </textarea>
-                
-                <h4>⚙️ Requisitos Funcionales:</h4>
-                <textarea readonly style="width: 100%; height: 100px;">
-${datos.componentes.filter(c => c.categoria !== 'frontend' && c.categoria !== 'backend' && c.categoria !== 'devops')
-    .map(c => `${c.componente}\t${c.buildingBlocks}\t1\t${Math.round(c.costoClienteIntermedio * 0.6)}\t${Math.round(c.horasIAIntermedio * 100)}\t${c.horasIAIntermedio}\t${Math.round(c.costoClienteIntermedio * 0.6)}\t1\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${Math.round(c.horasIAIntermedio * 2)}\tHerramientas Dev\t${Math.round(c.costoClienteIntermedio * 0.4)}\t${config.markupCliente}%\t${Math.round(c.costoClienteIntermedio)}`)
-    .join('\n')}
-                </textarea>
-                
-                <p><strong>5.</strong> Selecciona y copia cada sección</p>
-                <p><strong>6.</strong> Pega en las filas correspondientes del Google Sheet</p>
-                
-                <button onclick="this.parentElement.remove()" style="
-                    background: #4285f4;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    margin-top: 10px;
-                ">Cerrar</button>
-            `;
-            
-            document.body.appendChild(instrucciones);
-        }
+        // FUNCIÓN ELIMINADA - Solo modo automático
 
         function downloadFile(content, filename, mimeType) {
             const blob = new Blob([content], { type: mimeType });
