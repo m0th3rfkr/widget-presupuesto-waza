@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Debug OAuth Google - PASO A PASO</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>🔧 Debug Autenticación OAuth Google</h1>
+
+    <div id="status">🔄 Inicializando...</div>
+
+    <br><br>
+    <button onclick="step1LoadGapi()">1️⃣ Cargar GAPI</button>
+    <button onclick="step2InitClient()">2️⃣ Init Client</button>
+    <button onclick="step3CheckAuth()">3️⃣ Check Auth</button>
+    <button onclick="step4SignIn()">4️⃣ Sign In</button>
+
+    <div id="logs" style="margin-top: 20px; background: #f0f0f0; padding: 10px; font-family: monospace; max-height: 400px; overflow-y: auto;"></div>
+
+    <script>
+        let step = 0;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            log(`STATUS: ${message}`);
+        }
+
+        // PASO 1: Verificar que GAPI se carga
+        function step1LoadGapi() {
+            log('🔄 PASO 1: Verificando carga de GAPI...');
+
+            if (typeof gapi === 'undefined') {
+                log('❌ GAPI no está disponible');
+                return;
+            }
+
+            log('✅ GAPI disponible');
+            log(`📦 Versión GAPI: ${gapi.version || 'No disponible'}`);
+
+            // Verificar dominio
+            log(`🌐 Dominio: ${window.location.origin}`);
+            log(`📄 URL completa: ${window.location.href}`);
+
+            updateStatus('✅ PASO 1 completado - GAPI cargado');
+            step = 1;
+        }
+
+        // PASO 2: Cargar módulos necesarios
+        function step2InitClient() {
+            if (step < 1) {
+                log('❌ Ejecuta PASO 1 primero');
+                return;
+            }
+
+            log('🔄 PASO 2: Cargando módulos auth2:client...');
+
+            gapi.load('auth2:client', {
+                callback: () => {
+                    log('✅ Módulos auth2:client cargados correctamente');
+                    updateStatus('✅ PASO 2 completado - Módulos cargados');
+                    step = 2;
+                },
+                onerror: (error) => {
+                    log(`❌ Error cargando módulos: ${JSON.stringify(error)}`);
+                    updateStatus('❌ PASO 2 falló');
+                }
+            });
+        }
+
+        // PASO 3: Inicializar cliente con configuración mínima
+        function step3CheckAuth() {
+            if (step < 2) {
+                log('❌ Ejecuta PASO 2 primero');
+                return;
+            }
+
+            log('🔄 PASO 3: Inicializando cliente Google...');
+
+            // Configuración simplificada
+            const config = {
+                apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
+                clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
+                scope: 'https://www.googleapis.com/auth/drive.file'
+            };
+
+            log(`🔑 Client ID: ${config.clientId}`);
+            log(`🗝️ API Key: ${config.apiKey.substring(0, 20)}...`);
+            log(`🔐 Scope: ${config.scope}`);
+
+            gapi.client.init(config).then(() => {
+                log('✅ Cliente inicializado correctamente');
+
+                // Verificar auth2
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (authInstance) {
+                    log('✅ Auth instance obtenida');
+                    const isSignedIn = authInstance.isSignedIn.get();
+                    log(`🔍 Estado autenticación: ${isSignedIn ? 'Autenticado' : 'No autenticado'}`);
+                } else {
+                    log('❌ No se pudo obtener auth instance');
+                }
+
+                updateStatus('✅ PASO 3 completado - Cliente inicializado');
+                step = 3;
+
+            }).catch((error) => {
+                log('❌ Error en inicialización:');
+                log(`  - Message: ${error.message || 'N/A'}`);
+                log(`  - Details: ${error.details || 'N/A'}`);
+                log(`  - Result: ${JSON.stringify(error.result || {})}`);
+                log(`  - Full error: ${JSON.stringify(error)}`);
+
+                console.error('Full error object:', error);
+                updateStatus('❌ PASO 3 falló');
+            });
+        }
+
+        // PASO 4: Probar sign-in
+        function step4SignIn() {
+            if (step < 3) {
+                log('❌ Ejecuta PASO 3 primero');
+                return;
+            }
+
+            log('🔄 PASO 4: Probando sign-in...');
+
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (!authInstance) {
+                log('❌ No hay auth instance disponible');
+                return;
+            }
+
+            authInstance.signIn({
+                prompt: 'select_account'
+            }).then(() => {
+                log('✅ Sign-in exitoso');
+
+                const user = authInstance.currentUser.get();
+                const profile = user.getBasicProfile();
+                log(`👤 Usuario: ${profile.getName()}`);
+                log(`📧 Email: ${profile.getEmail()}`);
+
+                const grantedScopes = user.getGrantedScopes();
+                log(`🔑 Scopes otorgados: ${grantedScopes}`);
+
+                updateStatus('✅ PASO 4 completado - Autenticado');
+                step = 4;
+
+            }).catch((error) => {
+                log(`❌ Error en sign-in: ${JSON.stringify(error)}`);
+                console.error('Sign-in error:', error);
+                updateStatus('❌ PASO 4 falló');
+            });
+        }
+
+        // Auto-ejecutar paso 1 al cargar
+        window.onload = () => {
+            log('🚀 Página cargada');
+            updateStatus('🔄 Listo para debugging');
+            setTimeout(step1LoadGapi, 1000);
+        };
+    </script>
+</body>
+</html>

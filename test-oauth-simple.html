@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔐 Test OAuth Google - SIMPLE</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>🔐 Test Autenticación OAuth Google</h1>
+
+    <div id="status">🔄 Inicializando...</div>
+
+    <br><br>
+    <button id="signin-btn" onclick="signIn()" disabled>🔑 Login Google</button>
+    <button id="signout-btn" onclick="signOut()" disabled>🚪 Logout</button>
+
+    <br><br>
+    <button id="test-drive" onclick="testDrive()" disabled>📁 Test Drive API</button>
+    <button id="test-sheets" onclick="testSheets()" disabled>📊 Test Sheets API</button>
+
+    <div id="logs" style="margin-top: 20px; background: #f0f0f0; padding: 10px; font-family: monospace; max-height: 400px; overflow-y: auto;"></div>
+
+    <script>
+        // Configuración OAuth
+        const CLIENT_ID = '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+
+        let authInstance = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            log(`STATUS: ${message}`);
+        }
+
+        function updateButtons(isSignedIn) {
+            document.getElementById('signin-btn').disabled = isSignedIn;
+            document.getElementById('signout-btn').disabled = !isSignedIn;
+            document.getElementById('test-drive').disabled = !isSignedIn;
+            document.getElementById('test-sheets').disabled = !isSignedIn;
+        }
+
+        // Inicializar Google API
+        function initClient() {
+            updateStatus('🔄 Cargando Google API...');
+
+            // Verificar dominio actual
+            const currentOrigin = window.location.origin;
+            log(`🌐 Dominio actual: ${currentOrigin}`);
+
+            gapi.load('auth2:client', () => {
+                log('✅ GAPI cargado, inicializando cliente...');
+                log(`🔑 Client ID: ${CLIENT_ID}`);
+                log(`🗝️ API Key: ${API_KEY.substring(0, 10)}...`);
+                log(`🔐 Scopes: ${SCOPES}`);
+
+                gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    discoveryDocs: [
+                        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+                        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+                    ],
+                    scope: SCOPES
+                }).then(() => {
+                    log('✅ Cliente Google API inicializado correctamente');
+
+                    authInstance = gapi.auth2.getAuthInstance();
+
+                    // Verificar si ya está autenticado
+                    const isSignedIn = authInstance.isSignedIn.get();
+                    log(`🔍 Estado autenticación inicial: ${isSignedIn ? 'Autenticado' : 'No autenticado'}`);
+
+                    if (isSignedIn) {
+                        const user = authInstance.currentUser.get();
+                        const profile = user.getBasicProfile();
+                        updateStatus(`✅ Ya autenticado como: ${profile.getEmail()}`);
+                    } else {
+                        updateStatus('⚠️ No autenticado - Click "Login Google"');
+                    }
+
+                    updateButtons(isSignedIn);
+
+                    // Listener para cambios de autenticación
+                    authInstance.isSignedIn.listen((isSignedIn) => {
+                        log(`🔄 Cambio de autenticación: ${isSignedIn}`);
+                        updateButtons(isSignedIn);
+
+                        if (isSignedIn) {
+                            const user = authInstance.currentUser.get();
+                            const profile = user.getBasicProfile();
+                            updateStatus(`✅ Autenticado como: ${profile.getEmail()}`);
+                        } else {
+                            updateStatus('❌ Sesión cerrada');
+                        }
+                    });
+
+                }).catch((error) => {
+                    log(`❌ Error inicializando cliente: ${JSON.stringify(error)}`);
+                    log(`❌ Error message: ${error.message || 'Sin mensaje'}`);
+                    log(`❌ Error details: ${error.details || 'Sin detalles'}`);
+                    log(`❌ Error result: ${JSON.stringify(error.result || {})}`);
+                    updateStatus('❌ Error inicializando Google API');
+                    console.error('Error details:', error);
+                    console.error('Error stringified:', JSON.stringify(error, null, 2));
+                });
+            });
+        }
+
+        // Login
+        function signIn() {
+            log('🔑 Iniciando proceso de login...');
+            updateStatus('🔄 Solicitando autorización...');
+
+            authInstance.signIn({
+                prompt: 'select_account'
+            }).then(() => {
+                log('✅ Login completado exitosamente');
+                const user = authInstance.currentUser.get();
+                const profile = user.getBasicProfile();
+                log(`👤 Usuario: ${profile.getName()} (${profile.getEmail()})`);
+
+                // Verificar scopes otorgados
+                const grantedScopes = user.getGrantedScopes();
+                log(`🔑 Scopes otorgados: ${grantedScopes}`);
+
+            }).catch((error) => {
+                log(`❌ Error en login: ${error}`);
+                updateStatus('❌ Error en autenticación');
+                console.error('Login error:', error);
+            });
+        }
+
+        // Logout
+        function signOut() {
+            log('🚪 Cerrando sesión...');
+            authInstance.signOut().then(() => {
+                log('✅ Sesión cerrada correctamente');
+            });
+        }
+
+        // Test Drive API
+        async function testDrive() {
+            log('📁 Probando Drive API...');
+
+            try {
+                const response = await gapi.client.drive.files.list({
+                    pageSize: 5,
+                    fields: 'files(id, name, mimeType)'
+                });
+
+                const files = response.result.files;
+                log(`✅ Drive API OK - Encontrados ${files.length} archivos:`);
+
+                files.forEach(file => {
+                    log(`  📄 ${file.name} (${file.id})`);
+                });
+
+            } catch (error) {
+                log(`❌ Error en Drive API: ${error.message}`);
+                console.error('Drive error:', error);
+            }
+        }
+
+        // Test Sheets API
+        async function testSheets() {
+            log('📊 Probando Sheets API...');
+
+            try {
+                // Template ID del proyecto
+                const templateId = '1n8BAmL0zJOZrW1MQYo4JGj3YEJtvOhV0y2Wm8KqQVHE';
+
+                log(`🔍 Intentando acceder al template: ${templateId}`);
+
+                const response = await gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: templateId
+                });
+
+                log(`✅ Sheets API OK - Template encontrado:`);
+                log(`  📊 Título: ${response.result.properties.title}`);
+                log(`  📄 Sheets: ${response.result.sheets.length}`);
+
+                response.result.sheets.forEach(sheet => {
+                    log(`    - ${sheet.properties.title}`);
+                });
+
+            } catch (error) {
+                log(`❌ Error en Sheets API: ${error.message}`);
+                console.error('Sheets error:', error);
+            }
+        }
+
+        // Inicializar cuando cargue la página
+        window.onload = initClient;
+    </script>
+</body>
+</html>
