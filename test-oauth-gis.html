@@ -184,20 +184,71 @@
 
                 log(`🔍 Intentando acceder al template: ${templateId}`);
 
-                const response = await gapi.client.sheets.spreadsheets.get({
-                    spreadsheetId: templateId
-                });
+                // Primero probar acceso directo
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.get({
+                        spreadsheetId: templateId
+                    });
 
-                log(`✅ Sheets API OK - Template encontrado:`);
-                log(`  📊 Título: ${response.result.properties.title}`);
-                log(`  📄 Sheets: ${response.result.sheets.length}`);
+                    log(`✅ Sheets API OK - Template encontrado:`);
+                    log(`  📊 Título: ${response.result.properties.title}`);
+                    log(`  📄 Sheets: ${response.result.sheets.length}`);
 
-                response.result.sheets.forEach(sheet => {
-                    log(`    - ${sheet.properties.title}`);
-                });
+                    response.result.sheets.forEach(sheet => {
+                        log(`    - ${sheet.properties.title}`);
+                    });
 
-                // Probar creación de copia
-                log('🔄 Probando crear copia...');
+                } catch (sheetError) {
+                    log(`⚠️ No se puede acceder al template directamente: ${sheetError.message}`);
+                    log(`🔄 Intentando crear sheet nuevo desde cero...`);
+
+                    // Crear un nuevo spreadsheet en lugar de copiar
+                    const createResponse = await gapi.client.sheets.spreadsheets.create({
+                        resource: {
+                            properties: {
+                                title: `Presupuesto Test - ${new Date().toLocaleString()}`
+                            },
+                            sheets: [{
+                                properties: {
+                                    title: 'Presupuesto',
+                                    gridProperties: {
+                                        rowCount: 100,
+                                        columnCount: 15
+                                    }
+                                }
+                            }]
+                        }
+                    });
+
+                    const newSheetId = createResponse.result.spreadsheetId;
+                    log(`✅ Nuevo sheet creado: ${newSheetId}`);
+
+                    // Agregar datos de prueba
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: newSheetId,
+                        range: 'A1:C3',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: [
+                                ['Proyecto', 'Cliente', 'Fecha'],
+                                ['Proyecto Test OAuth', 'Cliente Test', new Date().toLocaleDateString()],
+                                ['Estado:', '✅ OAuth funcionando!', '🚀 GIS implementado']
+                            ]
+                        }
+                    });
+
+                    log(`✅ Datos de prueba agregados`);
+
+                    const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
+                    log(`🔗 URL: ${newSheetUrl}`);
+
+                    // Abrir en nueva ventana
+                    window.open(newSheetUrl, '_blank');
+                    return;
+                }
+
+                // Si llegamos aquí, el template es accesible, intentar copia
+                log('🔄 Template accesible, creando copia...');
 
                 const copyResponse = await gapi.client.drive.files.copy({
                     fileId: templateId,
@@ -216,7 +267,8 @@
                 window.open(newSheetUrl, '_blank');
 
             } catch (error) {
-                log(`❌ Error en Sheets API: ${error.message}`);
+                log(`❌ Error general en Sheets API: ${error.message || error}`);
+                log(`📝 Detalles completos: ${JSON.stringify(error)}`);
                 console.error('Sheets error:', error);
             }
         }
