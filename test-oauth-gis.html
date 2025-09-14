@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚀 Test OAuth Google - Nueva API (GIS)</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>🚀 Test OAuth Google - Nueva API (GIS)</h1>
+
+    <div id="status">🔄 Inicializando...</div>
+
+    <br><br>
+    <div id="buttonDiv"></div>
+    <button id="signout-btn" onclick="signOut()" disabled>🚪 Cerrar Sesión</button>
+
+    <br><br>
+    <button id="test-drive" onclick="testDrive()" disabled>📁 Test Drive API</button>
+    <button id="test-sheets" onclick="testSheets()" disabled>📊 Test Sheets API</button>
+
+    <div id="logs" style="margin-top: 20px; background: #f0f0f0; padding: 10px; font-family: monospace; max-height: 400px; overflow-y: auto;"></div>
+
+    <script>
+        // Configuración
+        const CLIENT_ID = '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+
+        let tokenClient;
+        let accessToken = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            log(`STATUS: ${message}`);
+        }
+
+        function updateButtons(isSignedIn) {
+            document.getElementById('signout-btn').disabled = !isSignedIn;
+            document.getElementById('test-drive').disabled = !isSignedIn;
+            document.getElementById('test-sheets').disabled = !isSignedIn;
+        }
+
+        // Inicializar Google Identity Services
+        function initializeGIS() {
+            updateStatus('🔄 Inicializando Google Identity Services...');
+            log('🚀 Configurando nueva Google Identity Services API');
+
+            log(`🔑 Client ID: ${CLIENT_ID}`);
+            log(`🗝️ API Key: ${API_KEY.substring(0, 20)}...`);
+            log(`🔐 Scopes: ${SCOPES}`);
+
+            // Inicializar cliente de tokens
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    log('✅ Token recibido exitosamente');
+                    log(`🎫 Access token: ${tokenResponse.access_token.substring(0, 20)}...`);
+
+                    accessToken = tokenResponse.access_token;
+                    gapi.client.setToken({ access_token: accessToken });
+
+                    updateStatus('✅ Autenticado correctamente con Google Identity Services');
+                    updateButtons(true);
+
+                    log('🎉 Proceso de autenticación completado');
+                },
+                error_callback: (error) => {
+                    log(`❌ Error en token: ${JSON.stringify(error)}`);
+                    updateStatus('❌ Error en autenticación');
+                    updateButtons(false);
+                }
+            });
+
+            // Crear botón de login
+            google.accounts.id.initialize({
+                client_id: CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+
+            // Botón personalizado para OAuth
+            const buttonDiv = document.getElementById('buttonDiv');
+            buttonDiv.innerHTML = '<button onclick="requestAccessToken()" style="padding: 10px 20px; font-size: 16px;">🔑 Autorizar Google APIs</button>';
+
+            updateStatus('✅ Google Identity Services inicializado - Click para autorizar');
+            log('✅ GIS inicializado correctamente');
+        }
+
+        // Solicitar token de acceso
+        function requestAccessToken() {
+            log('🔑 Solicitando token de acceso...');
+            updateStatus('🔄 Solicitando autorización...');
+
+            // Verificar si ya tenemos token válido
+            if (accessToken) {
+                log('⚠️ Ya existe un token, revocando primero...');
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    log('🗑️ Token anterior revocado');
+                });
+            }
+
+            tokenClient.requestAccessToken({
+                prompt: 'consent'
+            });
+        }
+
+        // Manejar respuesta de credenciales (para ID token)
+        function handleCredentialResponse(response) {
+            log('🆔 ID Token recibido');
+            // Este es solo para identificación, no para APIs
+        }
+
+        // Cerrar sesión
+        function signOut() {
+            log('🚪 Cerrando sesión...');
+
+            if (accessToken) {
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    log('✅ Token revocado');
+                    accessToken = null;
+                    gapi.client.setToken(null);
+                    updateStatus('✅ Sesión cerrada');
+                    updateButtons(false);
+                });
+            }
+        }
+
+        // Inicializar Google API Client
+        function initGAPI() {
+            log('📚 Inicializando Google API Client...');
+
+            gapi.load('client', async () => {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [
+                        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+                        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+                    ]
+                });
+
+                log('✅ Google API Client inicializado');
+                initializeGIS(); // Inicializar GIS después de GAPI
+            });
+        }
+
+        // Test Drive API
+        async function testDrive() {
+            log('📁 Probando Drive API...');
+
+            try {
+                const response = await gapi.client.drive.files.list({
+                    pageSize: 5,
+                    fields: 'files(id, name, mimeType)'
+                });
+
+                const files = response.result.files;
+                log(`✅ Drive API OK - Encontrados ${files.length} archivos:`);
+
+                files.forEach(file => {
+                    log(`  📄 ${file.name} (${file.id})`);
+                });
+
+            } catch (error) {
+                log(`❌ Error en Drive API: ${error.message}`);
+                console.error('Drive error:', error);
+            }
+        }
+
+        // Test Sheets API
+        async function testSheets() {
+            log('📊 Probando Sheets API...');
+
+            try {
+                // Template ID del proyecto
+                const templateId = '1n8BAmL0zJOZrW1MQYo4JGj3YEJtvOhV0y2Wm8KqQVHE';
+
+                log(`🔍 Intentando acceder al template: ${templateId}`);
+
+                const response = await gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: templateId
+                });
+
+                log(`✅ Sheets API OK - Template encontrado:`);
+                log(`  📊 Título: ${response.result.properties.title}`);
+                log(`  📄 Sheets: ${response.result.sheets.length}`);
+
+                response.result.sheets.forEach(sheet => {
+                    log(`    - ${sheet.properties.title}`);
+                });
+
+                // Probar creación de copia
+                log('🔄 Probando crear copia...');
+
+                const copyResponse = await gapi.client.drive.files.copy({
+                    fileId: templateId,
+                    resource: {
+                        name: `Test Copy - ${new Date().toLocaleString()}`
+                    }
+                });
+
+                const newSheetId = copyResponse.result.id;
+                log(`✅ Copia creada exitosamente: ${newSheetId}`);
+
+                const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
+                log(`🔗 URL: ${newSheetUrl}`);
+
+                // Abrir en nueva ventana
+                window.open(newSheetUrl, '_blank');
+
+            } catch (error) {
+                log(`❌ Error en Sheets API: ${error.message}`);
+                console.error('Sheets error:', error);
+            }
+        }
+
+        // Inicializar cuando cargue la página
+        window.onload = function() {
+            log('🚀 Página cargada');
+            updateStatus('🔄 Cargando APIs...');
+            initGAPI();
+        };
+    </script>
+</body>
+</html>
