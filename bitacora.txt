@@ -69,6 +69,34 @@ PENDIENTE:
 - Implementar tests unitarios automatizados
 - Documentar setup completo para nuevos usuarios
 
+CAMBIO 010:
+- Acción: Creación de scripts de testing OAuth Google
+- Archivos creados: test-oauth-simple.html, test-oauth-debug.html
+- Estado: COMPLETADO
+- Observaciones: Scripts para debuggear problema de autenticación OAuth con Google API
+- Issue encontrado: Error inicializando cliente Google API [object Object]
+
+CAMBIO 011:
+- Acción: Levantado servidor local para testing OAuth
+- Comando: python3 -m http.server 8000
+- Estado: EN PROGRESO
+- URL: http://localhost:8000/test-oauth-debug.html
+- Observaciones: Testing paso a paso para identificar fallo específico en inicialización
+
 ---
 NOTA: Este archivo se actualiza con cada cambio realizado en el proyecto.
-ESTADO ACTUAL: Sistema completamente funcional y testeado - 2025-09-13 17:06
+CAMBIO 012:
+- Acción: Diagnóstico exitoso de problema OAuth Google API
+- Estado: COMPLETADO ✅
+- Observaciones: OAuth y Sheets API funcionando perfectamente
+- Issue encontrado: Template original no se podía copiar (permisos)
+- Solución: Usuario creó copia propia del template
+
+CAMBIO 013:
+- Acción: Actualización de template ID en test-oauth-gis.html
+- Archivo modificado: test-oauth-gis.html
+- ID anterior: 1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI
+- ID nuevo: 1wR49oqHn3NdKj9pFzMdM2fpFpcYx7CxIZhLUHolWcA4
+- Estado: COMPLETADO ✅
+
+ESTADO ACTUAL: Listo para probar copia de template con nuevo ID - 2025-09-14 17:47
