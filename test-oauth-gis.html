@@ -299,43 +299,181 @@
                     });
                     log(`✅ Datos y fórmulas copiados: ${templateData.result.values.length} filas`);
 
-                    // Paso 5: Copiar formato de celdas
-                    log('🎨 Copiando formato de celdas...');
+                    // Paso 5: Aplicar formato completo del template
+                    log('🎨 Aplicando formato completo del template...');
                     try {
-                        // Obtener el formato del template
-                        const sourceSheetId = templateInfo.result.sheets[0].properties.sheetId;
+                        const newSheetSheetId = createResponse.result.sheets[0].properties.sheetId;
 
-                        // Usar batchUpdate para copiar formato
+                        // Formato para headers principales (azul oscuro)
                         await gapi.client.sheets.spreadsheets.batchUpdate({
                             spreadsheetId: newSheetId,
                             resource: {
                                 requests: [
+                                    // Encabezados principales (CLIENTE, PROYECTO, EJECUTIVO)
                                     {
-                                        copyPaste: {
-                                            source: {
-                                                sheetId: sourceSheetId,
-                                                startRowIndex: 0,
-                                                endRowIndex: 100,
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 1,
+                                                endRowIndex: 4,
+                                                startColumnIndex: 1,
+                                                endColumnIndex: 3
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.26,
+                                                        green: 0.52,
+                                                        blue: 0.96
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    },
+                                                    borders: {
+                                                        top: { style: 'SOLID', width: 1 },
+                                                        bottom: { style: 'SOLID', width: 1 },
+                                                        left: { style: 'SOLID', width: 1 },
+                                                        right: { style: 'SOLID', width: 1 }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)'
+                                        }
+                                    },
+                                    // Headers de secciones (Arquitectura Técnica, etc.)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
                                                 startColumnIndex: 0,
                                                 endColumnIndex: 26
                                             },
-                                            destination: {
-                                                sheetId: createResponse.result.sheets[0].properties.sheetId,
-                                                rowIndex: 0,
-                                                columnIndex: 0
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.26,
+                                                        green: 0.52,
+                                                        blue: 0.96
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
                                             },
-                                            pasteType: 'PASTE_FORMAT'
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Columnas HUMANOS (rojo)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 30,
+                                                startColumnIndex: 7,
+                                                endColumnIndex: 12
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.98,
+                                                        green: 0.4,
+                                                        blue: 0.4
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Columnas AI (verde)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 30,
+                                                startColumnIndex: 2,
+                                                endColumnIndex: 7
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.34,
+                                                        green: 0.73,
+                                                        blue: 0.34
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Columna MARKUP (amarillo)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 30,
+                                                startColumnIndex: 12,
+                                                endColumnIndex: 13
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 1,
+                                                        green: 0.95,
+                                                        blue: 0.4
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 0,
+                                                            green: 0,
+                                                            blue: 0
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     }
                                 ]
                             }
                         });
-                        log('✅ Formato copiado exitosamente');
+                        log('✅ Formato completo aplicado correctamente');
                     } catch (formatError) {
-                        log(`⚠️ No se pudo copiar formato completo: ${formatError.message}`);
-                        log('📝 Intentando método alternativo de formato...');
+                        log(`⚠️ Error aplicando formato: ${formatError.message}`);
+                        log('📝 Aplicando formato básico como fallback...');
 
-                        // Método alternativo: aplicar formato básico
+                        // Fallback básico
                         await gapi.client.sheets.spreadsheets.batchUpdate({
                             spreadsheetId: newSheetId,
                             resource: {
@@ -345,16 +483,16 @@
                                             range: {
                                                 sheetId: createResponse.result.sheets[0].properties.sheetId,
                                                 startRowIndex: 0,
-                                                endRowIndex: 5,
+                                                endRowIndex: 10,
                                                 startColumnIndex: 0,
-                                                endColumnIndex: 26
+                                                endColumnIndex: 15
                                             },
                                             cell: {
                                                 userEnteredFormat: {
                                                     backgroundColor: {
-                                                        red: 0.2,
-                                                        green: 0.6,
-                                                        blue: 0.9
+                                                        red: 0.26,
+                                                        green: 0.52,
+                                                        blue: 0.96
                                                     },
                                                     textFormat: {
                                                         bold: true,
