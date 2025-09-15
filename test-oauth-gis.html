@@ -411,7 +411,132 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Aplicar formato dinámicamente a filas de Requisitos encontradas
+                                    // Headers HUMANOS (solo títulos en rojo)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 7,
+                                                endColumnIndex: 12
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.98,
+                                                        green: 0.4,
+                                                        blue: 0.4
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Headers AI (solo títulos en verde)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 2,
+                                                endColumnIndex: 7
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.34,
+                                                        green: 0.73,
+                                                        blue: 0.34
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Header MARKUP (solo título en amarillo)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 12,
+                                                endColumnIndex: 13
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 1,
+                                                        green: 0.95,
+                                                        blue: 0.4
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 0,
+                                                            green: 0,
+                                                            blue: 0
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Celdas de datos (blancas con bordes) - ANTES de aplicar filas de Requisitos
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 6,
+                                                endRowIndex: 30,
+                                                startColumnIndex: 0,
+                                                endColumnIndex: 15
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 1,
+                                                        green: 1,
+                                                        blue: 1
+                                                    },
+                                                    textFormat: {
+                                                        foregroundColor: {
+                                                            red: 0,
+                                                            green: 0,
+                                                            blue: 0
+                                                        }
+                                                    },
+                                                    borders: {
+                                                        top: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        bottom: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        left: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        right: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)'
+                                        }
+                                    },
+                                    // IMPORTANTE: Aplicar formato de Requisitos AL FINAL (para que no sea sobreescrito)
                                     ...requisitosRows.map(reqRow => [
                                         // Sección AI + Nombre (azul)
                                         {
@@ -503,7 +628,7 @@
                                                 fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                             }
                                         },
-                                        // Resto de la fila (blanco)
+                                        // Resto de la fila (azul)
                                         {
                                             repeatCell: {
                                                 range: {
@@ -533,132 +658,7 @@
                                                 fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                             }
                                         }
-                                    ]).flat(),
-                                    // Headers HUMANOS (solo títulos en rojo)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 4,
-                                                endRowIndex: 6,
-                                                startColumnIndex: 7,
-                                                endColumnIndex: 12
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 0.98,
-                                                        green: 0.4,
-                                                        blue: 0.4
-                                                    },
-                                                    textFormat: {
-                                                        bold: true,
-                                                        foregroundColor: {
-                                                            red: 1,
-                                                            green: 1,
-                                                            blue: 1
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
-                                        }
-                                    },
-                                    // Headers AI (solo títulos en verde)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 4,
-                                                endRowIndex: 6,
-                                                startColumnIndex: 2,
-                                                endColumnIndex: 7
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 0.34,
-                                                        green: 0.73,
-                                                        blue: 0.34
-                                                    },
-                                                    textFormat: {
-                                                        bold: true,
-                                                        foregroundColor: {
-                                                            red: 1,
-                                                            green: 1,
-                                                            blue: 1
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
-                                        }
-                                    },
-                                    // Header MARKUP (solo título en amarillo)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 4,
-                                                endRowIndex: 6,
-                                                startColumnIndex: 12,
-                                                endColumnIndex: 13
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 1,
-                                                        green: 0.95,
-                                                        blue: 0.4
-                                                    },
-                                                    textFormat: {
-                                                        bold: true,
-                                                        foregroundColor: {
-                                                            red: 0,
-                                                            green: 0,
-                                                            blue: 0
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
-                                        }
-                                    },
-                                    // Celdas de datos (blancas con bordes)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 6,
-                                                endRowIndex: 30,
-                                                startColumnIndex: 0,
-                                                endColumnIndex: 15
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 1,
-                                                        green: 1,
-                                                        blue: 1
-                                                    },
-                                                    textFormat: {
-                                                        foregroundColor: {
-                                                            red: 0,
-                                                            green: 0,
-                                                            blue: 0
-                                                        }
-                                                    },
-                                                    borders: {
-                                                        top: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
-                                                        bottom: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
-                                                        left: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
-                                                        right: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } }
-                                                    }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)'
-                                        }
-                                    }
+                                    ]).flat()
                                 ]
                             }
                         });
