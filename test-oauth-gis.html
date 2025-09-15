@@ -247,18 +247,26 @@
                     return;
                 }
 
-                // En lugar de copiar, crear nuevo sheet con estructura del template
-                log('🔄 Template accesible, creando nuevo sheet con su estructura...');
+                // En lugar de copiar, crear nuevo sheet con estructura COMPLETA del template
+                log('🔄 Template accesible, creando copia completa con formato...');
 
-                // Leer datos del template
-                const templateData = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: templateId,
-                    range: 'A1:Z100' // Rango amplio para capturar todo
+                // Paso 1: Obtener información completa del template
+                const templateInfo = await gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: templateId
                 });
 
-                log(`📄 Datos del template obtenidos: ${templateData.result.values ? templateData.result.values.length : 0} filas`);
+                log(`📊 Template info obtenida: ${templateInfo.result.properties.title}`);
 
-                // Crear nuevo spreadsheet
+                // Paso 2: Leer datos CON FÓRMULAS (no solo valores)
+                const templateData = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: templateId,
+                    range: 'A1:Z100',
+                    valueRenderOption: 'FORMULA' // Esto obtiene fórmulas en lugar de valores calculados
+                });
+
+                log(`📄 Datos con fórmulas obtenidos: ${templateData.result.values ? templateData.result.values.length : 0} filas`);
+
+                // Paso 3: Crear nuevo spreadsheet
                 const createResponse = await gapi.client.sheets.spreadsheets.create({
                     resource: {
                         properties: {
@@ -279,17 +287,94 @@
                 const newSheetId = createResponse.result.spreadsheetId;
                 log(`✅ Nuevo sheet creado: ${newSheetId}`);
 
-                // Copiar datos del template al nuevo sheet
+                // Paso 4: Copiar datos CON FÓRMULAS
                 if (templateData.result.values && templateData.result.values.length > 0) {
                     await gapi.client.sheets.spreadsheets.values.update({
                         spreadsheetId: newSheetId,
                         range: 'A1',
-                        valueInputOption: 'RAW',
+                        valueInputOption: 'USER_ENTERED', // Esto interpreta fórmulas
                         resource: {
                             values: templateData.result.values
                         }
                     });
-                    log(`✅ Datos copiados: ${templateData.result.values.length} filas`);
+                    log(`✅ Datos y fórmulas copiados: ${templateData.result.values.length} filas`);
+
+                    // Paso 5: Copiar formato de celdas
+                    log('🎨 Copiando formato de celdas...');
+                    try {
+                        // Obtener el formato del template
+                        const sourceSheetId = templateInfo.result.sheets[0].properties.sheetId;
+
+                        // Usar batchUpdate para copiar formato
+                        await gapi.client.sheets.spreadsheets.batchUpdate({
+                            spreadsheetId: newSheetId,
+                            resource: {
+                                requests: [
+                                    {
+                                        copyPaste: {
+                                            source: {
+                                                sheetId: sourceSheetId,
+                                                startRowIndex: 0,
+                                                endRowIndex: 100,
+                                                startColumnIndex: 0,
+                                                endColumnIndex: 26
+                                            },
+                                            destination: {
+                                                sheetId: createResponse.result.sheets[0].properties.sheetId,
+                                                rowIndex: 0,
+                                                columnIndex: 0
+                                            },
+                                            pasteType: 'PASTE_FORMAT'
+                                        }
+                                    }
+                                ]
+                            }
+                        });
+                        log('✅ Formato copiado exitosamente');
+                    } catch (formatError) {
+                        log(`⚠️ No se pudo copiar formato completo: ${formatError.message}`);
+                        log('📝 Intentando método alternativo de formato...');
+
+                        // Método alternativo: aplicar formato básico
+                        await gapi.client.sheets.spreadsheets.batchUpdate({
+                            spreadsheetId: newSheetId,
+                            resource: {
+                                requests: [
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: createResponse.result.sheets[0].properties.sheetId,
+                                                startRowIndex: 0,
+                                                endRowIndex: 5,
+                                                startColumnIndex: 0,
+                                                endColumnIndex: 26
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.2,
+                                                        green: 0.6,
+                                                        blue: 0.9
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    }
+                                ]
+                            }
+                        });
+                        log('✅ Formato básico aplicado');
+                    }
+
                 } else {
                     log('⚠️ No se encontraron datos en el template, creando estructura básica...');
                     await gapi.client.sheets.spreadsheets.values.update({
