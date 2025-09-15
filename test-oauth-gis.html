@@ -538,7 +538,7 @@
                                     },
                                     // IMPORTANTE: Aplicar formato de Requisitos AL FINAL (para que no sea sobreescrito)
                                     ...requisitosRows.map(reqRow => [
-                                        // Sección AI + Nombre (azul)
+                                        // Sección Nombre (azul) - solo columnas 0-2
                                         {
                                             repeatCell: {
                                                 range: {
@@ -546,7 +546,7 @@
                                                     startRowIndex: reqRow.row,
                                                     endRowIndex: reqRow.row + 1,
                                                     startColumnIndex: 0,
-                                                    endColumnIndex: 7
+                                                    endColumnIndex: 2
                                                 },
                                                 cell: {
                                                     userEnteredFormat: {
@@ -554,6 +554,36 @@
                                                             red: 0.26,
                                                             green: 0.52,
                                                             blue: 0.96
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // Sección AI (verde) - columnas 2-7
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 2,
+                                                    endColumnIndex: 7
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.34,
+                                                            green: 0.73,
+                                                            blue: 0.34
                                                         },
                                                         textFormat: {
                                                             bold: true,
