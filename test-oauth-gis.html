@@ -375,13 +375,13 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Columnas HUMANOS (rojo)
+                                    // Headers HUMANOS (solo títulos en rojo)
                                     {
                                         repeatCell: {
                                             range: {
                                                 sheetId: newSheetSheetId,
                                                 startRowIndex: 4,
-                                                endRowIndex: 30,
+                                                endRowIndex: 6,
                                                 startColumnIndex: 7,
                                                 endColumnIndex: 12
                                             },
@@ -405,13 +405,13 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Columnas AI (verde)
+                                    // Headers AI (solo títulos en verde)
                                     {
                                         repeatCell: {
                                             range: {
                                                 sheetId: newSheetSheetId,
                                                 startRowIndex: 4,
-                                                endRowIndex: 30,
+                                                endRowIndex: 6,
                                                 startColumnIndex: 2,
                                                 endColumnIndex: 7
                                             },
@@ -435,13 +435,13 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Columna MARKUP (amarillo)
+                                    // Header MARKUP (solo título en amarillo)
                                     {
                                         repeatCell: {
                                             range: {
                                                 sheetId: newSheetSheetId,
                                                 startRowIndex: 4,
-                                                endRowIndex: 30,
+                                                endRowIndex: 6,
                                                 startColumnIndex: 12,
                                                 endColumnIndex: 13
                                             },
@@ -463,6 +463,41 @@
                                                 }
                                             },
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // Celdas de datos (blancas con bordes)
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 6,
+                                                endRowIndex: 30,
+                                                startColumnIndex: 0,
+                                                endColumnIndex: 15
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 1,
+                                                        green: 1,
+                                                        blue: 1
+                                                    },
+                                                    textFormat: {
+                                                        foregroundColor: {
+                                                            red: 0,
+                                                            green: 0,
+                                                            blue: 0
+                                                        }
+                                                    },
+                                                    borders: {
+                                                        top: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        bottom: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        left: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } },
+                                                        right: { style: 'SOLID', width: 1, color: { red: 0.8, green: 0.8, blue: 0.8 } }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat,borders)'
                                         }
                                     }
                                 ]
