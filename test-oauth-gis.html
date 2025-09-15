@@ -247,18 +247,64 @@
                     return;
                 }
 
-                // Si llegamos aquí, el template es accesible, intentar copia
-                log('🔄 Template accesible, creando copia...');
+                // En lugar de copiar, crear nuevo sheet con estructura del template
+                log('🔄 Template accesible, creando nuevo sheet con su estructura...');
 
-                const copyResponse = await gapi.client.drive.files.copy({
-                    fileId: templateId,
+                // Leer datos del template
+                const templateData = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: templateId,
+                    range: 'A1:Z100' // Rango amplio para capturar todo
+                });
+
+                log(`📄 Datos del template obtenidos: ${templateData.result.values ? templateData.result.values.length : 0} filas`);
+
+                // Crear nuevo spreadsheet
+                const createResponse = await gapi.client.sheets.spreadsheets.create({
                     resource: {
-                        name: `Test Copy - ${new Date().toLocaleString()}`
+                        properties: {
+                            title: `Presupuesto Copy - ${new Date().toLocaleString()}`
+                        },
+                        sheets: [{
+                            properties: {
+                                title: 'Presupuesto',
+                                gridProperties: {
+                                    rowCount: 1000,
+                                    columnCount: 26
+                                }
+                            }
+                        }]
                     }
                 });
 
-                const newSheetId = copyResponse.result.id;
-                log(`✅ Copia creada exitosamente: ${newSheetId}`);
+                const newSheetId = createResponse.result.spreadsheetId;
+                log(`✅ Nuevo sheet creado: ${newSheetId}`);
+
+                // Copiar datos del template al nuevo sheet
+                if (templateData.result.values && templateData.result.values.length > 0) {
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: newSheetId,
+                        range: 'A1',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: templateData.result.values
+                        }
+                    });
+                    log(`✅ Datos copiados: ${templateData.result.values.length} filas`);
+                } else {
+                    log('⚠️ No se encontraron datos en el template, creando estructura básica...');
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: newSheetId,
+                        range: 'A1:C3',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: [
+                                ['PRESUPUESTO WAZA', '', ''],
+                                ['Proyecto:', '[NOMBRE_PROYECTO]', ''],
+                                ['Cliente:', '[NOMBRE_CLIENTE]', '']
+                            ]
+                        }
+                    });
+                }
 
                 const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
                 log(`🔗 URL: ${newSheetUrl}`);
