@@ -299,10 +299,46 @@
                     });
                     log(`✅ Datos y fórmulas copiados: ${templateData.result.values.length} filas`);
 
-                    // Paso 5: Aplicar formato completo del template
+                    // Paso 5: Detectar filas dinámicamente y aplicar formato
                     log('🎨 Aplicando formato completo del template...');
                     try {
                         const newSheetSheetId = createResponse.result.sheets[0].properties.sheetId;
+
+                        // Detectar filas que contienen patrones de "Requisitos"
+                        log('🔍 Detectando filas con patrones de Requisitos...');
+                        const requisitosRows = [];
+
+                        if (templateData.result.values) {
+                            templateData.result.values.forEach((row, index) => {
+                                const rowText = row.join(' ').toLowerCase();
+
+                                // Buscar fila "Requisitos Funcionales"
+                                if (rowText.includes('requisitos funcionales') &&
+                                    rowText.includes('humanos') &&
+                                    rowText.includes('markup')) {
+                                    requisitosRows.push({
+                                        type: 'funcionales',
+                                        row: index,
+                                        text: 'Requisitos Funcionales'
+                                    });
+                                    log(`✅ Encontrada fila Requisitos Funcionales en: ${index + 1}`);
+                                }
+
+                                // Buscar fila "Requisitos No Funcionales"
+                                if (rowText.includes('requisitos no funcionales') &&
+                                    rowText.includes('humanos') &&
+                                    rowText.includes('markup')) {
+                                    requisitosRows.push({
+                                        type: 'no_funcionales',
+                                        row: index,
+                                        text: 'Requisitos No Funcionales'
+                                    });
+                                    log(`✅ Encontrada fila Requisitos No Funcionales en: ${index + 1}`);
+                                }
+                            });
+                        }
+
+                        log(`📋 Total filas de Requisitos encontradas: ${requisitosRows.length}`);
 
                         // Formato para headers principales (azul oscuro)
                         await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -375,66 +411,129 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Fila "Requisitos Funcionales" (azul)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 11,
-                                                endRowIndex: 13,
-                                                startColumnIndex: 0,
-                                                endColumnIndex: 26
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 0.26,
-                                                        green: 0.52,
-                                                        blue: 0.96
-                                                    },
-                                                    textFormat: {
-                                                        bold: true,
-                                                        foregroundColor: {
-                                                            red: 1,
-                                                            green: 1,
-                                                            blue: 1
+                                    // Aplicar formato dinámicamente a filas de Requisitos encontradas
+                                    ...requisitosRows.map(reqRow => [
+                                        // Sección AI + Nombre (azul)
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 0,
+                                                    endColumnIndex: 7
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.26,
+                                                            green: 0.52,
+                                                            blue: 0.96
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
-                                        }
-                                    },
-                                    // Fila "Requisitos No Funcionales" (azul)
-                                    {
-                                        repeatCell: {
-                                            range: {
-                                                sheetId: newSheetSheetId,
-                                                startRowIndex: 18,
-                                                endRowIndex: 20,
-                                                startColumnIndex: 0,
-                                                endColumnIndex: 26
-                                            },
-                                            cell: {
-                                                userEnteredFormat: {
-                                                    backgroundColor: {
-                                                        red: 0.26,
-                                                        green: 0.52,
-                                                        blue: 0.96
-                                                    },
-                                                    textFormat: {
-                                                        bold: true,
-                                                        foregroundColor: {
-                                                            red: 1,
-                                                            green: 1,
-                                                            blue: 1
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // Sección HUMANOS (rojo)
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 7,
+                                                    endColumnIndex: 12
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.98,
+                                                            green: 0.4,
+                                                            blue: 0.4
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            },
-                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // Sección MARKUP (amarillo)
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 12,
+                                                    endColumnIndex: 14
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 1,
+                                                            green: 0.95,
+                                                            blue: 0.4
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 0,
+                                                                green: 0,
+                                                                blue: 0
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // Resto de la fila (blanco)
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 14,
+                                                    endColumnIndex: 26
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.26,
+                                                            green: 0.52,
+                                                            blue: 0.96
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
                                         }
-                                    },
+                                    ]).flat(),
                                     // Headers HUMANOS (solo títulos en rojo)
                                     {
                                         repeatCell: {
