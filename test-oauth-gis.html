@@ -179,8 +179,8 @@
             log('📊 Probando Sheets API...');
 
             try {
-                // Template ID del proyecto (actualizado - copia propia)
-                const templateId = '1wR49oqHn3NdKj9pFzMdM2fpFpcYx7CxIZhLUHolWcA4';
+                // Template ID del proyecto (template original con colores corregidos)
+                const templateId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
 
                 log(`🔍 Intentando acceder al template: ${templateId}`);
 
@@ -299,46 +299,70 @@
                     });
                     log(`✅ Datos y fórmulas copiados: ${templateData.result.values.length} filas`);
 
-                    // Paso 5: Detectar filas dinámicamente y aplicar formato
-                    log('🎨 Aplicando formato completo del template...');
+                    // Paso 5: Copiar formato directamente del template
+                    log('🎨 Copiando formato del template actualizado...');
                     try {
                         const newSheetSheetId = createResponse.result.sheets[0].properties.sheetId;
 
-                        // Detectar filas que contienen patrones de "Requisitos"
-                        log('🔍 Detectando filas con patrones de Requisitos...');
-                        const requisitosRows = [];
+                        // Obtener el formato del template original
+                        log('📋 Obteniendo formato del template...');
+                        const templateSheetInfo = await gapi.client.sheets.spreadsheets.get({
+                            spreadsheetId: templateId,
+                            includeGridData: true,
+                            ranges: ['A1:Z100']
+                        });
 
-                        if (templateData.result.values) {
-                            templateData.result.values.forEach((row, index) => {
-                                const rowText = row.join(' ').toLowerCase();
+                        log('✅ Formato del template obtenido');
 
-                                // Buscar fila "Requisitos Funcionales"
-                                if (rowText.includes('requisitos funcionales') &&
-                                    rowText.includes('humanos') &&
-                                    rowText.includes('markup')) {
-                                    requisitosRows.push({
-                                        type: 'funcionales',
-                                        row: index,
-                                        text: 'Requisitos Funcionales'
+                        // Copiar el formato celda por celda desde el template
+                        const templateSheet = templateSheetInfo.result.sheets[0];
+                        const templateGridData = templateSheet.data[0];
+
+                        if (templateGridData && templateGridData.rowData) {
+                            log('📝 Aplicando formato completo del template...');
+
+                            // Aplicar formato fila por fila
+                            const formatRequests = [];
+
+                            templateGridData.rowData.forEach((row, rowIndex) => {
+                                if (row.values) {
+                                    row.values.forEach((cell, colIndex) => {
+                                        if (cell.userEnteredFormat) {
+                                            formatRequests.push({
+                                                repeatCell: {
+                                                    range: {
+                                                        sheetId: newSheetSheetId,
+                                                        startRowIndex: rowIndex,
+                                                        endRowIndex: rowIndex + 1,
+                                                        startColumnIndex: colIndex,
+                                                        endColumnIndex: colIndex + 1
+                                                    },
+                                                    cell: {
+                                                        userEnteredFormat: cell.userEnteredFormat
+                                                    },
+                                                    fields: 'userEnteredFormat'
+                                                }
+                                            });
+                                        }
                                     });
-                                    log(`✅ Encontrada fila Requisitos Funcionales en: ${index + 1}`);
-                                }
-
-                                // Buscar fila "Requisitos No Funcionales"
-                                if (rowText.includes('requisitos no funcionales') &&
-                                    rowText.includes('humanos') &&
-                                    rowText.includes('markup')) {
-                                    requisitosRows.push({
-                                        type: 'no_funcionales',
-                                        row: index,
-                                        text: 'Requisitos No Funcionales'
-                                    });
-                                    log(`✅ Encontrada fila Requisitos No Funcionales en: ${index + 1}`);
                                 }
                             });
-                        }
 
-                        log(`📋 Total filas de Requisitos encontradas: ${requisitosRows.length}`);
+                            // Aplicar todos los formatos en lotes para evitar límites de API
+                            const batchSize = 100;
+                            for (let i = 0; i < formatRequests.length; i += batchSize) {
+                                const batch = formatRequests.slice(i, i + batchSize);
+                                await gapi.client.sheets.spreadsheets.batchUpdate({
+                                    spreadsheetId: newSheetId,
+                                    resource: {
+                                        requests: batch
+                                    }
+                                });
+                                log(`✅ Aplicado formato lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(formatRequests.length/batchSize)}`);
+                            }
+
+                            log('✅ Formato completo aplicado desde template');
+                        }
 
                         // Formato para headers principales (azul oscuro)
                         await gapi.client.sheets.spreadsheets.batchUpdate({
