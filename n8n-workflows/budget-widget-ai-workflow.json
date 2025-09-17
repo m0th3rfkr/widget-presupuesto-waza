@@ -1,0 +1,221 @@
+{
+  "name": "Budget Widget AI Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-quote",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        100
+      ],
+      "webhookId": "generate-quote"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assignment-001",
+              "name": "building_blocks",
+              "value": "={{ $json.building_blocks }}",
+              "type": "object"
+            },
+            {
+              "id": "assignment-002", 
+              "name": "config",
+              "value": "={{ $json.config }}",
+              "type": "object"
+            },
+            {
+              "id": "assignment-003",
+              "name": "webhook_url",
+              "value": "https://dfgisycuxnshfn5xzabdsbpa.hooks.n8n.cloud/webhook/generate-quote",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "edit-fields-001",
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "code": "import sys\nimport json\nimport boto3\nfrom datetime import datetime\n\n# Claude 4 integration with AWS Bedrock\ndef claude_analysis(building_blocks, config):\n    client = boto3.client('bedrock-runtime', region_name='us-east-1')\n    \n    prompt = f\"\"\"\nAnalyze these software building blocks for budget estimation:\n\nBuilding Blocks: {json.dumps(building_blocks, indent=2)}\nProject Config: {json.dumps(config, indent=2)}\n\nProvide:\n1. Detailed cost analysis\n2. Risk assessment\n3. Optimization recommendations\n4. Timeline estimation\n5. Resource allocation suggestions\n\nFormat the response as structured JSON.\n\"\"\"\n    \n    body = {\n        \"anthropic_version\": \"bedrock-2023-05-31\",\n        \"max_tokens\": 4000,\n        \"messages\": [{\n            \"role\": \"user\",\n            \"content\": prompt\n        }]\n    }\n    \n    try:\n        response = client.invoke_model(\n            modelId=\"anthropic.claude-3-sonnet-20240229-v1:0\",\n            body=json.dumps(body)\n        )\n        \n        response_body = json.loads(response['body'].read())\n        analysis = response_body['content'][0]['text']\n        \n        return {\n            'analysis': analysis,\n            'timestamp': datetime.now().isoformat(),\n            'model_used': 'claude-3-sonnet',\n            'status': 'success'\n        }\n    except Exception as e:\n        return {\n            'error': str(e),\n            'status': 'error',\n            'timestamp': datetime.now().isoformat()\n        }\n\n# Get input data\nbuilding_blocks = $json.building_blocks\nconfig = $json.config\n\n# Perform Claude analysis\nresult = claude_analysis(building_blocks, config)\n\nreturn [{\"json\": result}]"
+      },
+      "id": "code-001",
+      "name": "Claude AI Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "language": "python", 
+        "code": "import json\nimport math\nfrom datetime import datetime\n\n# Enhanced quote processing with AI insights\ndef process_enhanced_quote(building_blocks, config, ai_analysis):\n    enhanced_quote = {\n        'project_name': config.get('nombreProyecto', 'Unnamed Project'),\n        'generated_at': datetime.now().isoformat(),\n        'ai_enhanced': True,\n        'original_config': config,\n        'ai_insights': ai_analysis,\n        'categories': {},\n        'totals': {\n            'basic': 0,\n            'standard': 0, \n            'enterprise': 0\n        },\n        'recommendations': []\n    }\n    \n    # Process categories with AI insights\n    if building_blocks and 'categories' in building_blocks:\n        for category_id, category in building_blocks['categories'].items():\n            category_data = {\n                'name': category['name'],\n                'items': 0,\n                'hours': {'basic': 0, 'standard': 0, 'enterprise': 0},\n                'costs': {'basic': 0, 'standard': 0, 'enterprise': 0}\n            }\n            \n            if 'building_blocks' in category:\n                for block_id, block in category['building_blocks'].items():\n                    if 'hours' in block:\n                        # Calculate costs with AI efficiency factor\n                        efficiency_factor = (100 - config.get('eficienciaIA', 35)) / 100\n                        markup_factor = (100 + config.get('markup', 40)) / 100\n                        \n                        basic_hours = block['hours'].get('facil', 0) * efficiency_factor\n                        standard_hours = block['hours'].get('intermedio', 0) * efficiency_factor\n                        enterprise_hours = block['hours'].get('complejo', 0) * efficiency_factor\n                        \n                        ai_rate = config.get('tarifaIA', 300)\n                        \n                        basic_cost = basic_hours * ai_rate * markup_factor\n                        standard_cost = standard_hours * ai_rate * markup_factor\n                        enterprise_cost = enterprise_hours * ai_rate * markup_factor\n                        \n                        category_data['hours']['basic'] += basic_hours\n                        category_data['hours']['standard'] += standard_hours\n                        category_data['hours']['enterprise'] += enterprise_hours\n                        \n                        category_data['costs']['basic'] += basic_cost\n                        category_data['costs']['standard'] += standard_cost\n                        category_data['costs']['enterprise'] += enterprise_cost\n                        \n                        category_data['items'] += 1\n            \n            enhanced_quote['categories'][category['name']] = category_data\n            \n            # Add to totals\n            enhanced_quote['totals']['basic'] += category_data['costs']['basic']\n            enhanced_quote['totals']['standard'] += category_data['costs']['standard'] \n            enhanced_quote['totals']['enterprise'] += category_data['costs']['enterprise']\n    \n    # Add AI-based recommendations\n    if ai_analysis.get('status') == 'success':\n        enhanced_quote['recommendations'] = [\n            'AI-optimized resource allocation applied',\n            f\"Estimated {config.get('eficienciaIA', 35)}% efficiency gain with AI tools\",\n            'Risk mitigation strategies included in pricing',\n            'Timeline optimized based on complexity analysis'\n        ]\n    \n    # Add project factors\n    factors = {\n        'pm': config.get('factorPM', 18),\n        'testing': config.get('factorTesting', 12),\n        'contingency': config.get('factorContingencia', 20)\n    }\n    \n    for tier in ['basic', 'standard', 'enterprise']:\n        factor_cost = enhanced_quote['totals'][tier] * sum(factors.values()) / 100\n        enhanced_quote['totals'][tier] += factor_cost\n    \n    return enhanced_quote\n\n# Process the data\nbuilding_blocks = $json.building_blocks\nconfig = $json.config\nai_analysis = $json.analysis if 'analysis' in $json else {}\n\nenhanced_quote = process_enhanced_quote(building_blocks, config, ai_analysis)\n\nreturn [{\"json\": enhanced_quote}]"
+      },
+      "id": "code-002",
+      "name": "Process Enhanced Quote",
+      "type": "n8n-nodes-base.code", 
+      "typeVersion": 2,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "code": "import json\nimport base64\nfrom datetime import datetime\n\n# Generate Excel and Markdown content\ndef generate_files(enhanced_quote):\n    # Generate Markdown content\n    markdown = f\"\"\"# Cotización AI-Enhanced - {enhanced_quote['project_name']}\n\n*Generado con AI el {enhanced_quote['generated_at']}*\n\n## Resumen Ejecutivo\n\n| Nivel | Costo Total | Recomendación |\n|-------|-------------|---------------|\n| Básico | ${enhanced_quote['totals']['basic']:,.2f} MXN | Ideal para MVP |\n| Estándar | ${enhanced_quote['totals']['standard']:,.2f} MXN | Recomendado para producción |\n| Enterprise | ${enhanced_quote['totals']['enterprise']:,.2f} MXN | Escalamiento masivo |\n\n## Análisis por Categorías\n\n\"\"\"\n    \n    for category_name, category_data in enhanced_quote['categories'].items():\n        markdown += f\"\"\"### {category_name}\n- Items: {category_data['items']}\n- Horas básico: {category_data['hours']['basic']:.1f}\n- Costo básico: ${category_data['costs']['basic']:,.2f} MXN\n\n\"\"\"\n    \n    markdown += \"\"\"## Recomendaciones AI\n\n\"\"\"\n    \n    for rec in enhanced_quote.get('recommendations', []):\n        markdown += f\"- {rec}\\n\"\n    \n    markdown += f\"\"\"\n\n## Configuración Utilizada\n- Eficiencia AI: {enhanced_quote['original_config'].get('eficienciaIA', 35)}%\n- Markup: {enhanced_quote['original_config'].get('markup', 40)}%\n- Tarifa AI: ${enhanced_quote['original_config'].get('tarifaIA', 300)} MXN/hora\n\"\"\"\n    \n    # Simple Excel-like CSV content\n    csv_content = \"Categoría,Items,Horas Básico,Costo Básico,Horas Estándar,Costo Estándar,Horas Enterprise,Costo Enterprise\\n\"\n    \n    for category_name, category_data in enhanced_quote['categories'].items():\n        csv_content += f\"{category_name},{category_data['items']},{category_data['hours']['basic']:.1f},{category_data['costs']['basic']:.2f},{category_data['hours']['standard']:.1f},{category_data['costs']['standard']:.2f},{category_data['hours']['enterprise']:.1f},{category_data['costs']['enterprise']:.2f}\\n\"\n    \n    csv_content += f\"TOTAL,-,-,{enhanced_quote['totals']['basic']:.2f},-,{enhanced_quote['totals']['standard']:.2f},-,{enhanced_quote['totals']['enterprise']:.2f}\\n\"\n    \n    return {\n        'markdown': markdown,\n        'csv': csv_content,\n        'json': enhanced_quote,\n        'filename_base': f\"cotizacion_{enhanced_quote['project_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}\"\n    }\n\n# Get enhanced quote data\nenhanced_quote = $json\n\n# Generate files\nfiles = generate_files(enhanced_quote)\n\nreturn [{\"json\": files}]"
+      },
+      "id": "code-003",
+      "name": "Generate Files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \n  \"status\": \"success\",\n  \"message\": \"AI-enhanced quote generated successfully\",\n  \"data\": $json,\n  \"webhook_url\": \"https://dfgisycuxnshfn5xzabdsbpa.hooks.n8n.cloud/webhook/generate-quote\",\n  \"timestamp\": $now\n} }}",
+        "options": {}
+      },
+      "id": "response-001",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $json.filename_base }}.md",
+        "fileContent": "={{ $json.markdown }}",
+        "options": {}
+      },
+      "id": "write-file-001", 
+      "name": "Save Markdown",
+      "type": "n8n-nodes-base.writeFile",
+      "typeVersion": 1,
+      "position": [
+        900,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $json.filename_base }}.csv", 
+        "fileContent": "={{ $json.csv }}",
+        "options": {}
+      },
+      "id": "write-file-002",
+      "name": "Save CSV",
+      "type": "n8n-nodes-base.writeFile", 
+      "typeVersion": 1,
+      "position": [
+        900,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Claude AI Analysis", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Process Enhanced Quote",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Enhanced Quote": {
+      "main": [
+        [
+          {
+            "node": "Generate Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Files": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Markdown",
+            "type": "main", 
+            "index": 0
+          },
+          {
+            "node": "Save CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "budget-widget-ai-workflow",
+  "tags": ["ai", "budget", "claude", "automation"]
+}

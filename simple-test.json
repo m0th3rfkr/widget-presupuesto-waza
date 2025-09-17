@@ -1,0 +1,28 @@
+{
+  "building_blocks": {
+    "categories": {
+      "test": {
+        "name": "Test Category",
+        "building_blocks": {
+          "simple_task": {
+            "name": "Simple Task",
+            "hours": {
+              "facil": 10,
+              "intermedio": 20,
+              "complejo": 30
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "nombreProyecto": "Test Project",
+    "tarifaIA": 300,
+    "markup": 40,
+    "eficienciaIA": 35,
+    "factorPM": 18,
+    "factorTesting": 12,
+    "factorContingencia": 20
+  }
+}

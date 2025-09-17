@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google API Connection</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #3367d6; }
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test de Conexión Google API</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Información del Test</h3>
+        <p><strong>Dominio actual:</strong> <span id="current-domain"></span></p>
+        <p><strong>API Key:</strong> AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs</p>
+        <p><strong>Client ID:</strong> 64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🚀 Tests de Conexión</h3>
+        <button onclick="testGAPILoad()">1. Test GAPI Load</button>
+        <button onclick="testAPIInit()">2. Test API Init</button>
+        <button onclick="testAuth()">3. Test Auth</button>
+        <button onclick="testSheetsAPI()">4. Test Sheets API</button>
+        <button onclick="clearLog()">🗑️ Limpiar Log</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Log de Resultados</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // Configuración
+        const CONFIG = {
+            apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
+            clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
+            discoveryDocs: [
+                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+            ],
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file'
+        };
+
+        // Mostrar dominio actual
+        document.getElementById('current-domain').textContent = window.location.origin;
+
+        // Función para logging
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Test 1: Verificar si GAPI se carga
+        function testGAPILoad() {
+            log('=== TEST 1: GAPI Load ===');
+            
+            if (typeof gapi === 'undefined') {
+                log('ERROR: gapi no está definido', 'error');
+                return;
+            }
+            
+            log('✓ gapi está disponible', 'success');
+            log('✓ Versión de gapi: ' + (gapi.version || 'desconocida'));
+        }
+
+        // Test 2: Inicializar API (Nueva versión con GIS)
+        function testAPIInit() {
+            log('=== TEST 2: API Init (GIS) ===');
+            
+            if (typeof gapi === 'undefined') {
+                log('ERROR: Primero ejecuta Test 1', 'error');
+                return;
+            }
+
+            if (typeof google === 'undefined') {
+                log('ERROR: Google Identity Services no está cargado', 'error');
+                return;
+            }
+
+            gapi.load('client', {
+                callback: async () => {
+                    try {
+                        log('✓ GAPI client cargado (sin auth2 deprecado)');
+                        
+                        // Solo inicializar client, no auth2
+                        await gapi.client.init({
+                            apiKey: CONFIG.apiKey,
+                            discoveryDocs: CONFIG.discoveryDocs
+                        });
+                        
+                        log('✓ Google API inicializada correctamente', 'success');
+                        log('✓ APIs disponibles: ' + Object.keys(gapi.client).join(', '));
+                        
+                        // Inicializar Google Identity Services
+                        google.accounts.id.initialize({
+                            client_id: CONFIG.clientId,
+                            callback: handleCredentialResponse
+                        });
+                        
+                        log('✓ Google Identity Services inicializado', 'success');
+                        
+                    } catch (error) {
+                        log('ERROR en inicialización: ' + error.message, 'error');
+                        log('Detalles: ' + JSON.stringify(error, null, 2), 'error');
+                    }
+                },
+                onerror: (error) => {
+                    log('ERROR cargando GAPI: ' + JSON.stringify(error), 'error');
+                }
+            });
+        }
+
+        // Callback para el credential response
+        function handleCredentialResponse(response) {
+            log('✓ Credential recibido: ' + response.credential.substring(0, 50) + '...', 'success');
+        }
+
+        // Test 3: Autenticación (Nueva versión con OAuth2)
+        let accessToken = null;
+        
+        function testAuth() {
+            log('=== TEST 3: Autenticación (OAuth2) ===');
+            
+            try {
+                if (typeof google === 'undefined') {
+                    log('ERROR: Google Identity Services no disponible. Ejecuta Test 2 primero.', 'error');
+                    return;
+                }
+                
+                log('Iniciando OAuth2 flow...');
+                
+                // Usar Google OAuth2 para obtener access token
+                const tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CONFIG.clientId,
+                    scope: CONFIG.scopes,
+                    callback: (response) => {
+                        if (response.error) {
+                            log('ERROR en OAuth2: ' + response.error, 'error');
+                            return;
+                        }
+                        
+                        log('✓ Token de acceso obtenido!', 'success');
+                        log('Token: ' + response.access_token.substring(0, 50) + '...');
+                        accessToken = response.access_token;
+                        
+                        // Configurar el token en gapi
+                        gapi.client.setToken({
+                            access_token: accessToken
+                        });
+                        
+                        log('✓ Token configurado en gapi.client', 'success');
+                    }
+                });
+                
+                // Solicitar token
+                tokenClient.requestAccessToken({
+                    prompt: 'consent'
+                });
+                
+            } catch (error) {
+                log('ERROR: ' + error.message, 'error');
+            }
+        }
+
+        // Test 4: Probar Sheets API
+        function testSheetsAPI() {
+            log('=== TEST 4: Sheets API ===');
+            
+            try {
+                if (!accessToken) {
+                    log('ERROR: Primero debes autenticarte (Test 3)', 'error');
+                    return;
+                }
+                
+                log('Testing Sheets API con nuevo token...');
+                
+                // Test simple: intentar acceder a un spreadsheet público
+                const testSheetId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
+                
+                gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: testSheetId,
+                    includeGridData: false
+                }).then((response) => {
+                    log('✓ Sheets API funciona correctamente!', 'success');
+                    log('Spreadsheet encontrado: ' + response.result.properties.title);
+                    log('Sheets disponibles: ' + response.result.sheets.length);
+                    
+                    // Test adicional: intentar crear una copia
+                    log('Probando crear copia...');
+                    return gapi.client.request({
+                        path: `https://www.googleapis.com/drive/v3/files/${testSheetId}/copy`,
+                        method: 'POST',
+                        body: {
+                            name: 'Test Copy - ' + new Date().getTime()
+                        }
+                    });
+                }).then((copyResponse) => {
+                    log('✓ Copia creada exitosamente!', 'success');
+                    log('ID de la copia: ' + copyResponse.result.id);
+                    log('Nombre: ' + copyResponse.result.name);
+                }).catch((error) => {
+                    if (error.result && error.result.error) {
+                        log('ERROR en API: ' + error.result.error.message, 'error');
+                        log('Código: ' + error.result.error.code, 'error');
+                    } else {
+                        log('ERROR: ' + JSON.stringify(error), 'error');
+                    }
+                });
+                
+            } catch (error) {
+                log('ERROR: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-ejecutar Test 1 al cargar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🔧 Test de conexión iniciado');
+                testGAPILoad();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

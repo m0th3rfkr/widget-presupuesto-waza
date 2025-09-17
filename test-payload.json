@@ -1,0 +1,50 @@
+{
+  "building_blocks": {
+    "categories": {
+      "frontend": {
+        "name": "Frontend Development",
+        "building_blocks": {
+          "ui_components": {
+            "name": "UI Components",
+            "hours": {
+              "facil": 40,
+              "intermedio": 80,
+              "complejo": 120
+            }
+          },
+          "responsive_design": {
+            "name": "Responsive Design",
+            "hours": {
+              "facil": 20,
+              "intermedio": 40,
+              "complejo": 60
+            }
+          }
+        }
+      },
+      "backend": {
+        "name": "Backend Development",
+        "building_blocks": {
+          "api_development": {
+            "name": "API Development", 
+            "hours": {
+              "facil": 60,
+              "intermedio": 100,
+              "complejo": 160
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "nombreProyecto": "Test Project",
+    "tarifaBase": 500,
+    "tarifaIA": 300,
+    "markup": 40,
+    "eficienciaIA": 35,
+    "factorPM": 18,
+    "factorTesting": 12,
+    "factorContingencia": 20
+  }
+}

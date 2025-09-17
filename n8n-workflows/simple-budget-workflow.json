@@ -1,0 +1,76 @@
+{
+  "name": "Simple Budget Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "budget-quote",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-simple-001",
+      "name": "Budget Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [100, 100],
+      "webhookId": "budget-quote"
+    },
+    {
+      "parameters": {
+        "language": "javascript",
+        "code": "// Simple budget processing without external AI\nfunction processBudgetData(buildingBlocks, config) {\n  const processed = {\n    project_name: config.nombreProyecto || 'Unnamed Project',\n    generated_at: new Date().toISOString(),\n    categories: {},\n    totals: { basic: 0, standard: 0, enterprise: 0 },\n    config: config\n  };\n  \n  if (buildingBlocks && buildingBlocks.categories) {\n    for (const [categoryId, category] of Object.entries(buildingBlocks.categories)) {\n      const categoryData = {\n        name: category.name,\n        items: 0,\n        hours: { basic: 0, standard: 0, enterprise: 0 },\n        costs: { basic: 0, standard: 0, enterprise: 0 }\n      };\n      \n      if (category.building_blocks) {\n        for (const [blockId, block] of Object.entries(category.building_blocks)) {\n          if (block.hours) {\n            // Apply AI efficiency factor\n            const efficiency = (100 - (config.eficienciaIA || 35)) / 100;\n            const markup = (100 + (config.markup || 40)) / 100;\n            const aiRate = config.tarifaIA || 300;\n            \n            const basicHours = (block.hours.facil || 0) * efficiency;\n            const standardHours = (block.hours.intermedio || 0) * efficiency;\n            const enterpriseHours = (block.hours.complejo || 0) * efficiency;\n            \n            const basicCost = basicHours * aiRate * markup;\n            const standardCost = standardHours * aiRate * markup;\n            const enterpriseCost = enterpriseHours * aiRate * markup;\n            \n            categoryData.hours.basic += basicHours;\n            categoryData.hours.standard += standardHours;\n            categoryData.hours.enterprise += enterpriseHours;\n            \n            categoryData.costs.basic += basicCost;\n            categoryData.costs.standard += standardCost;\n            categoryData.costs.enterprise += enterpriseCost;\n            \n            categoryData.items++;\n          }\n        }\n      }\n      \n      processed.categories[category.name] = categoryData;\n      processed.totals.basic += categoryData.costs.basic;\n      processed.totals.standard += categoryData.costs.standard;\n      processed.totals.enterprise += categoryData.costs.enterprise;\n    }\n  }\n  \n  // Apply project factors\n  const pmFactor = (config.factorPM || 18) / 100;\n  const testingFactor = (config.factorTesting || 12) / 100;\n  const contingencyFactor = (config.factorContingencia || 20) / 100;\n  const totalFactor = pmFactor + testingFactor + contingencyFactor;\n  \n  processed.totals.basic *= (1 + totalFactor);\n  processed.totals.standard *= (1 + totalFactor);\n  processed.totals.enterprise *= (1 + totalFactor);\n  \n  return processed;\n}\n\n// Generate files content\nfunction generateFiles(processed) {\n  const markdown = `# Cotización ${processed.project_name}\n\n*Generado el ${processed.generated_at}*\n\n## Resumen Ejecutivo\n\n| Nivel | Costo Total | Descripción |\n|-------|-------------|-------------|\n| Básico | $${Math.round(processed.totals.basic).toLocaleString()} MXN | Implementación MVP |\n| Estándar | $${Math.round(processed.totals.standard).toLocaleString()} MXN | Producción estable |\n| Enterprise | $${Math.round(processed.totals.enterprise).toLocaleString()} MXN | Escalamiento masivo |\n\n## Categorías\n\n${Object.entries(processed.categories).map(([name, data]) => \n  `### ${name}\n- Items: ${data.items}\n- Horas (Básico/Estándar/Enterprise): ${data.hours.basic.toFixed(1)}/${data.hours.standard.toFixed(1)}/${data.hours.enterprise.toFixed(1)}\n- Costos: $${Math.round(data.costs.basic).toLocaleString()}/$${Math.round(data.costs.standard).toLocaleString()}/$${Math.round(data.costs.enterprise).toLocaleString()} MXN`\n).join('\\n\\n')}\n\n## Configuración\n- Eficiencia IA: ${processed.config.eficienciaIA || 35}%\n- Markup: ${processed.config.markup || 40}%\n- Tarifa IA: $${processed.config.tarifaIA || 300} MXN/hora\n- Factor PM: ${processed.config.factorPM || 18}%\n- Factor Testing: ${processed.config.factorTesting || 12}%\n- Factor Contingencia: ${processed.config.factorContingencia || 20}%`;\n\n  const csv = `Categoría,Items,Horas Básico,Costo Básico,Horas Estándar,Costo Estándar,Horas Enterprise,Costo Enterprise\\n${Object.entries(processed.categories).map(([name, data]) => \n    `${name},${data.items},${data.hours.basic.toFixed(1)},${Math.round(data.costs.basic)},${data.hours.standard.toFixed(1)},${Math.round(data.costs.standard)},${data.hours.enterprise.toFixed(1)},${Math.round(data.costs.enterprise)}`\n  ).join('\\n')}\\nTOTAL,-,-,${Math.round(processed.totals.basic)},-,${Math.round(processed.totals.standard)},-,${Math.round(processed.totals.enterprise)}`;\n\n  return {\n    markdown,\n    csv,\n    processed,\n    filename: `cotizacion_${processed.project_name.replace(/\\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}`\n  };\n}\n\n// Process the input data\nconst buildingBlocks = $json.building_blocks;\nconst config = $json.config;\n\nconst processed = processBudgetData(buildingBlocks, config);\nconst files = generateFiles(processed);\n\nreturn [{ json: files }];"
+      },
+      "id": "code-simple-001",
+      "name": "Process Budget",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"status\": \"success\",\n  \"message\": \"Budget processed successfully\",\n  \"data\": $json,\n  \"webhook_url\": \"https://dfgisycuxnshfn5xzabdsbpa.hooks.n8n.cloud/webhook/budget-quote\",\n  \"timestamp\": $now\n} }}",
+        "options": {}
+      },
+      "id": "response-simple-001",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "Budget Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Budget": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "simple-budget-workflow",
+  "tags": ["budget", "simple", "automation"]
+}
