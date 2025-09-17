@@ -441,15 +441,45 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Headers AI (verde)
+                                    // ITEM y DESCRIPCIÓN (azul) - columnas 2-3
                                     {
                                         repeatCell: {
                                             range: {
                                                 sheetId: newSheetSheetId,
                                                 startRowIndex: 4,
                                                 endRowIndex: 6,
-                                                startColumnIndex: 2,
-                                                endColumnIndex: 7
+                                                startColumnIndex: 1,
+                                                endColumnIndex: 3
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.26,
+                                                        green: 0.52,
+                                                        blue: 0.96
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // AI section (verde) - columna 3
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 3,
+                                                endColumnIndex: 4
                                             },
                                             cell: {
                                                 userEnteredFormat: {
@@ -471,14 +501,74 @@
                                             fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                         }
                                     },
-                                    // Continuación HUMANOS (rojo) - columnas 12 (M) hasta antes de MARKUP
+                                    // Columnas verdes (CANTIDAD, COSTO, TOKENS, HRS) - columnas 4-7
                                     {
                                         repeatCell: {
                                             range: {
                                                 sheetId: newSheetSheetId,
                                                 startRowIndex: 4,
                                                 endRowIndex: 6,
-                                                startColumnIndex: 12,
+                                                startColumnIndex: 4,
+                                                endColumnIndex: 8
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.34,
+                                                        green: 0.73,
+                                                        blue: 0.34
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // COSTO FINAL (rojo) - columna 8
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 8,
+                                                endColumnIndex: 9
+                                            },
+                                            cell: {
+                                                userEnteredFormat: {
+                                                    backgroundColor: {
+                                                        red: 0.98,
+                                                        green: 0.4,
+                                                        blue: 0.4
+                                                    },
+                                                    textFormat: {
+                                                        bold: true,
+                                                        foregroundColor: {
+                                                            red: 1,
+                                                            green: 1,
+                                                            blue: 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                        }
+                                    },
+                                    // HUMANOS y CANTIDAD (rojo) - columnas 9-12
+                                    {
+                                        repeatCell: {
+                                            range: {
+                                                sheetId: newSheetSheetId,
+                                                startRowIndex: 4,
+                                                endRowIndex: 6,
+                                                startColumnIndex: 9,
                                                 endColumnIndex: 13
                                             },
                                             cell: {
@@ -600,7 +690,7 @@
                                     // Aplicar a AMBAS filas: la del título Y la siguiente (headers de columnas)
                                     ...requisitosRows.map(reqRow => [
                                         // FILA DEL TÍTULO (ej: "Requisitos Funcionales")
-                                        // Sección Nombre (azul) - columnas 0-2
+                                        // Nombre de sección (azul) - columnas 0-1
                                         {
                                             repeatCell: {
                                                 range: {
@@ -608,7 +698,7 @@
                                                     startRowIndex: reqRow.row,
                                                     endRowIndex: reqRow.row + 1,
                                                     startColumnIndex: 0,
-                                                    endColumnIndex: 2
+                                                    endColumnIndex: 1
                                                 },
                                                 cell: {
                                                     userEnteredFormat: {
@@ -630,15 +720,45 @@
                                                 fields: 'userEnteredFormat(backgroundColor,textFormat)'
                                             }
                                         },
-                                        // AI section (verde) - columnas 2-7
+                                        // ITEM y DESCRIPCIÓN (azul) - columnas 1-3
                                         {
                                             repeatCell: {
                                                 range: {
                                                     sheetId: newSheetSheetId,
                                                     startRowIndex: reqRow.row,
                                                     endRowIndex: reqRow.row + 1,
-                                                    startColumnIndex: 2,
-                                                    endColumnIndex: 7
+                                                    startColumnIndex: 1,
+                                                    endColumnIndex: 3
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.26,
+                                                            green: 0.52,
+                                                            blue: 0.96
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // AI section (verde) - columna 3
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 3,
+                                                    endColumnIndex: 4
                                                 },
                                                 cell: {
                                                     userEnteredFormat: {
@@ -646,6 +766,66 @@
                                                             red: 0.34,
                                                             green: 0.73,
                                                             blue: 0.34
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // Columnas verdes (CANTIDAD, COSTO, TOKENS, HRS) - columnas 4-8
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 4,
+                                                    endColumnIndex: 8
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.34,
+                                                            green: 0.73,
+                                                            blue: 0.34
+                                                        },
+                                                        textFormat: {
+                                                            bold: true,
+                                                            foregroundColor: {
+                                                                red: 1,
+                                                                green: 1,
+                                                                blue: 1
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                                            }
+                                        },
+                                        // COSTO FINAL (rojo) - columna 8
+                                        {
+                                            repeatCell: {
+                                                range: {
+                                                    sheetId: newSheetSheetId,
+                                                    startRowIndex: reqRow.row,
+                                                    endRowIndex: reqRow.row + 1,
+                                                    startColumnIndex: 8,
+                                                    endColumnIndex: 9
+                                                },
+                                                cell: {
+                                                    userEnteredFormat: {
+                                                        backgroundColor: {
+                                                            red: 0.98,
+                                                            green: 0.4,
+                                                            blue: 0.4
                                                         },
                                                         textFormat: {
                                                             bold: true,
