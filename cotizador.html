@@ -778,7 +778,7 @@
                 mostrarMensaje('🔄 Creando copia del template...', 'info');
 
                 // Crear copia del template automáticamente
-                const templateId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
+                const templateId = '1wR49oqHn3NdKj9pFzMdM2fpFpcYx7CxIZhLUHolWcA4';
                 const fecha = new Date().toISOString().slice(0, 10);
                 const nombreArchivo = `Cotización_${config.nombreProyecto.replace(/\s+/g, '_')}_${fecha}`;
 
@@ -919,13 +919,13 @@
 
             // Categorizar componentes como pediste
             const arquitectura = datos.componentes.filter(c =>
-                c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops'
+                c.categoria && (c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops')
             );
             const funcionales = datos.componentes.filter(c =>
-                !['frontend', 'backend', 'devops'].includes(c.categoria)
+                c.categoria && !['frontend', 'backend', 'devops'].includes(c.categoria)
             );
             const noFuncionales = datos.componentes.filter(c =>
-                c.categoria === 'security' || c.categoria === 'performance' || c.categoria === 'monitoring'
+                c.categoria && (c.categoria === 'security' || c.categoria === 'performance' || c.categoria === 'monitoring')
             );
 
             console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
@@ -1033,8 +1033,8 @@
             const values = [];
             
             // Categorizar componentes
-            const arquitectura = datos.componentes.filter(c => c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops');
-            const funcionales = datos.componentes.filter(c => !['frontend', 'backend', 'devops'].includes(c.categoria));
+            const arquitectura = datos.componentes.filter(c => c.categoria && (c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops'));
+            const funcionales = datos.componentes.filter(c => c.categoria && !['frontend', 'backend', 'devops'].includes(c.categoria));
             
             // Llenar sección Arquitectura Técnica (empezar en fila 8)
             let currentRow = 8;
