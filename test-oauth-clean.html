@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚀 Test OAuth Google - Template Clean</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+    <h1>🚀 Test OAuth Google - Template Clean</h1>
+
+    <div id="status">🔄 Inicializando...</div>
+
+    <br><br>
+    <div id="buttonDiv"></div>
+    <button id="signout-btn" onclick="signOut()" disabled>🚪 Cerrar Sesión</button>
+
+    <br><br>
+    <button id="test-drive" onclick="testDrive()" disabled>📁 Test Drive API</button>
+    <button id="test-sheets" onclick="testSheets()" disabled>📊 Test Sheets API</button>
+
+    <div id="logs" style="margin-top: 20px; background: #f0f0f0; padding: 10px; font-family: monospace; max-height: 400px; overflow-y: auto;"></div>
+
+    <script>
+        // Configuración
+        const CLIENT_ID = '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs';
+        const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
+
+        let tokenClient;
+        let accessToken = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            log(`STATUS: ${message}`);
+        }
+
+        function updateButtons(isSignedIn) {
+            document.getElementById('signout-btn').disabled = !isSignedIn;
+            document.getElementById('test-drive').disabled = !isSignedIn;
+            document.getElementById('test-sheets').disabled = !isSignedIn;
+        }
+
+        // Inicializar Google Identity Services
+        function initializeGIS() {
+            updateStatus('🔄 Inicializando Google Identity Services...');
+            log('🚀 Configurando nueva Google Identity Services API');
+
+            log(`🔑 Client ID: ${CLIENT_ID}`);
+            log(`🗝️ API Key: ${API_KEY.substring(0, 20)}...`);
+            log(`🔐 Scopes: ${SCOPES}`);
+
+            // Inicializar cliente de tokens
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    log('✅ Token recibido exitosamente');
+                    log(`🎫 Access token: ${tokenResponse.access_token.substring(0, 20)}...`);
+
+                    accessToken = tokenResponse.access_token;
+                    gapi.client.setToken({ access_token: accessToken });
+
+                    updateStatus('✅ Autenticado correctamente con Google Identity Services');
+                    updateButtons(true);
+
+                    log('🎉 Proceso de autenticación completado');
+                },
+                error_callback: (error) => {
+                    log(`❌ Error en token: ${JSON.stringify(error)}`);
+                    updateStatus('❌ Error en autenticación');
+                    updateButtons(false);
+                }
+            });
+
+            // Crear botón de login
+            google.accounts.id.initialize({
+                client_id: CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+
+            // Botón personalizado para OAuth
+            const buttonDiv = document.getElementById('buttonDiv');
+            buttonDiv.innerHTML = '<button onclick="requestAccessToken()" style="padding: 10px 20px; font-size: 16px;">🔑 Autorizar Google APIs</button>';
+
+            updateStatus('✅ Google Identity Services inicializado - Click para autorizar');
+            log('✅ GIS inicializado correctamente');
+        }
+
+        // Solicitar token de acceso
+        function requestAccessToken() {
+            log('🔑 Solicitando token de acceso...');
+            updateStatus('🔄 Solicitando autorización...');
+
+            // Verificar si ya tenemos token válido
+            if (accessToken) {
+                log('⚠️ Ya existe un token, revocando primero...');
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    log('🗑️ Token anterior revocado');
+                });
+            }
+
+            tokenClient.requestAccessToken({
+                prompt: 'consent'
+            });
+        }
+
+        // Manejar respuesta de credenciales (para ID token)
+        function handleCredentialResponse(response) {
+            log('🆔 ID Token recibido');
+            // Este es solo para identificación, no para APIs
+        }
+
+        // Cerrar sesión
+        function signOut() {
+            log('🚪 Cerrando sesión...');
+
+            if (accessToken) {
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    log('✅ Token revocado');
+                    accessToken = null;
+                    gapi.client.setToken(null);
+                    updateStatus('✅ Sesión cerrada');
+                    updateButtons(false);
+                });
+            }
+        }
+
+        // Inicializar Google API Client
+        function initGAPI() {
+            log('📚 Inicializando Google API Client...');
+
+            gapi.load('client', async () => {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [
+                        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+                        'https://sheets.googleapis.com/$discovery/rest?version=v4'
+                    ]
+                });
+
+                log('✅ Google API Client inicializado');
+                initializeGIS(); // Inicializar GIS después de GAPI
+            });
+        }
+
+        // Test Drive API
+        async function testDrive() {
+            log('📁 Probando Drive API...');
+
+            try {
+                const response = await gapi.client.drive.files.list({
+                    pageSize: 5,
+                    fields: 'files(id, name, mimeType)'
+                });
+
+                const files = response.result.files;
+                log(`✅ Drive API OK - Encontrados ${files.length} archivos:`);
+
+                files.forEach(file => {
+                    log(`  📄 ${file.name} (${file.id})`);
+                });
+
+            } catch (error) {
+                log(`❌ Error en Drive API: ${error.message}`);
+                console.error('Drive error:', error);
+            }
+        }
+
+        // Test Sheets API - VERSION LIMPIA
+        async function testSheets() {
+            log('📊 Probando Sheets API...');
+
+            try {
+                // Template ID del proyecto (template original con colores corregidos)
+                const templateId = '1oKLjM3GdariaTP4uuFjYDgCKXcMk-7xeuLta0okX-oI';
+
+                log(`🔍 Accediendo al template: ${templateId}`);
+
+                // Leer datos del template CON FÓRMULAS
+                const templateData = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: templateId,
+                    range: 'A1:Z100',
+                    valueRenderOption: 'FORMULA'
+                });
+
+                log(`📄 Datos obtenidos del template: ${templateData.result.values ? templateData.result.values.length : 0} filas`);
+
+                // Crear nuevo spreadsheet
+                const createResponse = await gapi.client.sheets.spreadsheets.create({
+                    resource: {
+                        properties: {
+                            title: `Presupuesto Copy - ${new Date().toLocaleString()}`
+                        },
+                        sheets: [{
+                            properties: {
+                                title: 'Presupuesto',
+                                gridProperties: {
+                                    rowCount: 1000,
+                                    columnCount: 26
+                                }
+                            }
+                        }]
+                    }
+                });
+
+                const newSheetId = createResponse.result.spreadsheetId;
+                log(`✅ Nuevo sheet creado: ${newSheetId}`);
+
+                // Copiar datos CON FÓRMULAS
+                if (templateData.result.values && templateData.result.values.length > 0) {
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: newSheetId,
+                        range: 'A1',
+                        valueInputOption: 'USER_ENTERED',
+                        resource: {
+                            values: templateData.result.values
+                        }
+                    });
+                    log(`✅ Datos copiados: ${templateData.result.values.length} filas`);
+
+                    // MÉTODO SIMPLE: Obtener el formato del template y copiarlo
+                    log('🎨 Copiando formato del template...');
+
+                    try {
+                        // Obtener formato detallado del template
+                        const templateSheetInfo = await gapi.client.sheets.spreadsheets.get({
+                            spreadsheetId: templateId,
+                            includeGridData: true,
+                            ranges: ['A1:Z50']
+                        });
+
+                        log('✅ Formato del template obtenido');
+
+                        const newSheetSheetId = createResponse.result.sheets[0].properties.sheetId;
+                        const templateSheet = templateSheetInfo.result.sheets[0];
+                        const templateGridData = templateSheet.data[0];
+
+                        if (templateGridData && templateGridData.rowData) {
+                            log('📝 Aplicando formato del template...');
+
+                            const formatRequests = [];
+
+                            templateGridData.rowData.forEach((row, rowIndex) => {
+                                if (row.values) {
+                                    row.values.forEach((cell, colIndex) => {
+                                        if (cell.userEnteredFormat) {
+                                            formatRequests.push({
+                                                repeatCell: {
+                                                    range: {
+                                                        sheetId: newSheetSheetId,
+                                                        startRowIndex: rowIndex,
+                                                        endRowIndex: rowIndex + 1,
+                                                        startColumnIndex: colIndex,
+                                                        endColumnIndex: colIndex + 1
+                                                    },
+                                                    cell: {
+                                                        userEnteredFormat: cell.userEnteredFormat
+                                                    },
+                                                    fields: 'userEnteredFormat'
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Aplicar formatos en lotes pequeños
+                            const batchSize = 50;
+                            for (let i = 0; i < formatRequests.length; i += batchSize) {
+                                const batch = formatRequests.slice(i, i + batchSize);
+                                await gapi.client.sheets.spreadsheets.batchUpdate({
+                                    spreadsheetId: newSheetId,
+                                    resource: {
+                                        requests: batch
+                                    }
+                                });
+                                log(`✅ Aplicado formato lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(formatRequests.length/batchSize)}`);
+                            }
+
+                            log('✅ Formato aplicado desde template');
+                        }
+
+                    } catch (formatError) {
+                        log(`⚠️ Error copiando formato: ${formatError.message}`);
+                        log('📝 Sheet creado sin formato especial');
+                    }
+
+                } else {
+                    log('⚠️ No se encontraron datos en el template');
+                }
+
+                const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
+                log(`🔗 URL: ${newSheetUrl}`);
+
+                // Abrir en nueva ventana
+                window.open(newSheetUrl, '_blank');
+
+            } catch (error) {
+                log(`❌ Error en Sheets API: ${error.message || error}`);
+                console.error('Sheets error:', error);
+            }
+        }
+
+        // Inicializar cuando cargue la página
+        window.onload = function() {
+            log('🚀 Página cargada');
+            updateStatus('🔄 Cargando APIs...');
+            initGAPI();
+        };
+    </script>
+</body>
+</html>
