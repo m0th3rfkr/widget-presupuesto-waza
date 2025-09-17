@@ -207,16 +207,70 @@
             }
         });
         
+        // Transformar formato nuevo a formato esperado por el cotizador
+        function transformNewFormatToOld(newData) {
+            const componentes = [];
+            const tarifaBase = 500; // Default tarifa base
+
+            // Mapear categorías a tipos esperados
+            const categoryMapping = {
+                'arquitectura_tecnica': 'devops',
+                'requisitos_funcionales': 'features',
+                'requisitos_no_funcionales': 'performance'
+            };
+
+            Object.entries(newData.categories).forEach(([categoryKey, category]) => {
+                Object.entries(category.building_blocks).forEach(([blockKey, block]) => {
+                    const categoria = categoryMapping[categoryKey] || 'features';
+                    const complejidad = 'intermedio'; // Default complexity
+
+                    const horas = block.hours[complejidad] || 40;
+                    const costoCliente = horas * tarifaBase;
+
+                    componentes.push({
+                        nombre: block.name,
+                        descripcion: block.description,
+                        categoria: categoria,
+                        complejidad: complejidad,
+                        horas: horas,
+                        horasIA: Math.round(horas * 0.7), // 70% IA
+                        horasHumanas: Math.round(horas * 0.3), // 30% humanos
+                        costoCliente: costoCliente,
+                        requirements: block.requirements || [],
+                        buildingBlocks: [blockKey]
+                    });
+                });
+            });
+
+            return {
+                metadata: newData.metadata,
+                componentes: componentes,
+                categories: Object.keys(newData.categories).map(key => ({
+                    id: key,
+                    name: newData.categories[key].name,
+                    description: newData.categories[key].description
+                }))
+            };
+        }
+
         function cargarJSON(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data.categories || !data.metadata) {
+
+                    // Detectar formato y transformar si es necesario
+                    if (data.categories && data.metadata) {
+                        // Nuevo formato - transformar a formato esperado
+                        buildingBlocksData = transformNewFormatToOld(data);
+                        mostrarMensaje('JSON nuevo formato transformado correctamente', 'success');
+                    } else if (data.componentes) {
+                        // Formato antiguo
+                        buildingBlocksData = data;
+                        mostrarMensaje('JSON cargado correctamente', 'success');
+                    } else {
                         throw new Error('El JSON no tiene la estructura esperada');
                     }
-                    buildingBlocksData = data;
-                    mostrarMensaje('JSON cargado correctamente', 'success');
                 } catch (error) {
                     mostrarMensaje('Error al cargar JSON: ' + error.message, 'error');
                 }
