@@ -786,8 +786,8 @@
 
                 mostrarMensaje('🔄 Llenando datos automáticamente...', 'info');
 
-                // Llenar datos automáticamente con inserción/eliminación de filas
-                await populateGoogleSheetSmart(newSheetId, datos, config);
+                // Llenar datos automáticamente (método simplificado)
+                await populateGoogleSheetSimple(newSheetId, datos, config);
 
                 // Abrir el sheet completado
                 const newSheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}`;
@@ -942,7 +942,98 @@
             }
         }
 
-        // Llenar datos en Google Sheet inteligentemente (insertar/eliminar filas)
+        // Llenar datos en Google Sheet (método simplificado)
+        async function populateGoogleSheetSimple(sheetId, datos, config) {
+            console.log('📋 Llenando datos simplificado...');
+
+            try {
+                // 1. Actualizar nombre del proyecto
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: sheetId,
+                    range: 'B4:B4',
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [[config.nombreProyecto]]
+                    }
+                });
+
+                // 2. Categorizar componentes
+                const arquitectura = datos.componentes.filter(c =>
+                    c.categoria && (c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops')
+                );
+                const funcionales = datos.componentes.filter(c =>
+                    c.categoria && !['frontend', 'backend', 'devops', 'security', 'performance', 'monitoring'].includes(c.categoria)
+                );
+
+                console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}`);
+
+                // 3. Llenar sección Arquitectura (filas 8-10)
+                if (arquitectura.length > 0) {
+                    const archRows = arquitectura.slice(0, 3).map(comp => [
+                        comp.nombre,
+                        comp.descripcion || 'Componente de arquitectura',
+                        1,
+                        Math.round(comp.costoCliente || 0),
+                        Math.round(comp.horasIA || 0),
+                        Math.round(comp.horasIA || 0),
+                        Math.round(comp.costoCliente || 0),
+                        1,
+                        Math.round(comp.costoCliente * 0.3 || 0),
+                        Math.round(comp.horasIA * 2 || 0),
+                        'Dev Tools',
+                        Math.round(comp.costoCliente || 0),
+                        `${config.markup}%`,
+                        Math.round(comp.costoCliente * (1 + config.markup/100) || 0)
+                    ]);
+
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: sheetId,
+                        range: 'A8:N10',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: archRows
+                        }
+                    });
+                }
+
+                // 4. Llenar sección Funcionales (filas 15-17)
+                if (funcionales.length > 0) {
+                    const funcRows = funcionales.slice(0, 3).map(comp => [
+                        comp.nombre,
+                        comp.descripcion || 'Componente funcional',
+                        1,
+                        Math.round(comp.costoCliente || 0),
+                        Math.round(comp.horasIA || 0),
+                        Math.round(comp.horasIA || 0),
+                        Math.round(comp.costoCliente || 0),
+                        1,
+                        Math.round(comp.costoCliente * 0.3 || 0),
+                        Math.round(comp.horasIA * 2 || 0),
+                        'Dev Tools',
+                        Math.round(comp.costoCliente || 0),
+                        `${config.markup}%`,
+                        Math.round(comp.costoCliente * (1 + config.markup/100) || 0)
+                    ]);
+
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: sheetId,
+                        range: 'A15:N17',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: funcRows
+                        }
+                    });
+                }
+
+                console.log('✅ Datos llenados correctamente');
+
+            } catch (error) {
+                console.error('❌ Error llenando datos:', error);
+                throw error;
+            }
+        }
+
+        // Llenar datos en Google Sheet inteligentemente (insertar/eliminar filas) - BACKUP
         async function populateGoogleSheetSmart(sheetId, datos, config) {
             console.log('📋 Iniciando llenado inteligente...');
 
