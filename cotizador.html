@@ -777,12 +777,12 @@
 
                 mostrarMensaje('🔄 Creando copia del template...', 'info');
 
-                // Crear copia del template automáticamente
+                // Crear copia del template automáticamente usando el método que funciona
                 const templateId = '1wR49oqHn3NdKj9pFzMdM2fpFpcYx7CxIZhLUHolWcA4';
                 const fecha = new Date().toISOString().slice(0, 10);
                 const nombreArchivo = `Cotización_${config.nombreProyecto.replace(/\s+/g, '_')}_${fecha}`;
 
-                const newSheetId = await copyGoogleSheet(templateId, nombreArchivo);
+                const newSheetId = await createSheetFromTemplate(templateId, nombreArchivo);
 
                 mostrarMensaje('🔄 Llenando datos automáticamente...', 'info');
 
@@ -797,10 +797,11 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                if (error.message.includes('popup_blocked')) {
+                const errorMessage = error.message || error.toString() || 'Error desconocido';
+                if (errorMessage.includes('popup_blocked')) {
                     mostrarMensaje('❌ Popup bloqueado. Permite popups para este sitio.', 'error');
                 } else {
-                    mostrarMensaje('❌ Error: ' + error.message, 'error');
+                    mostrarMensaje('❌ Error: ' + errorMessage, 'error');
                 }
             }
         }
@@ -885,30 +886,58 @@
             });
         }
 
-        // Crear copia del template
-        async function copyGoogleSheet(templateId, newName) {
+        // Crear sheet desde template (método que funciona)
+        async function createSheetFromTemplate(templateId, newName) {
             try {
-                console.log('Copiando template:', templateId, 'con nombre:', newName);
-                
-                const response = await gapi.client.request({
-                    path: `https://www.googleapis.com/drive/v3/files/${templateId}/copy`,
-                    method: 'POST',
-                    body: {
-                        name: newName
+                console.log('📋 Creando sheet desde template:', templateId, 'con nombre:', newName);
+
+                // 1. Leer datos del template CON FÓRMULAS
+                const templateData = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: templateId,
+                    range: 'A1:Z100',
+                    valueRenderOption: 'FORMULA'
+                });
+
+                console.log(`📄 Datos obtenidos del template: ${templateData.result.values ? templateData.result.values.length : 0} filas`);
+
+                // 2. Crear nuevo spreadsheet
+                const createResponse = await gapi.client.sheets.spreadsheets.create({
+                    resource: {
+                        properties: {
+                            title: newName
+                        },
+                        sheets: [{
+                            properties: {
+                                title: 'Presupuesto',
+                                gridProperties: {
+                                    rowCount: 1000,
+                                    columnCount: 26
+                                }
+                            }
+                        }]
                     }
                 });
-                
-                console.log('Respuesta de copia:', response);
-                
-                if (response.result && response.result.id) {
-                    console.log('Copia creada exitosamente con ID:', response.result.id);
-                    return response.result.id;
-                } else {
-                    throw new Error('No se pudo obtener ID del archivo copiado');
+
+                const newSheetId = createResponse.result.spreadsheetId;
+                console.log(`✅ Nuevo sheet creado: ${newSheetId}`);
+
+                // 3. Copiar datos CON FÓRMULAS
+                if (templateData.result.values && templateData.result.values.length > 0) {
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: newSheetId,
+                        range: 'A1',
+                        valueInputOption: 'USER_ENTERED',
+                        resource: {
+                            values: templateData.result.values
+                        }
+                    });
+                    console.log(`✅ Datos copiados: ${templateData.result.values.length} filas`);
                 }
-                
+
+                return newSheetId;
+
             } catch (error) {
-                console.error('Error creando copia:', error);
+                console.error('❌ Error creando sheet desde template:', error);
                 throw error;
             }
         }
