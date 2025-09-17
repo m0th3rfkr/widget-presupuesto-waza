@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador Excel + MD desde Building Blocks</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
         body {
@@ -181,6 +182,15 @@
     </div>
 
     <script>
+        // Configuración OAuth Google
+        const CLIENT_ID = '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs';
+        const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
+
+        let tokenClient;
+        let accessToken = null;
+        let isGoogleApiLoaded = false;
+
         let buildingBlocksData = null;
         let templateData = null;
         
@@ -721,15 +731,6 @@
         }
         
         // Google Sheets API configuration
-        const GOOGLE_CONFIG = {
-            apiKey: 'AIzaSyA5WkzYdrn2v24fgB1rln5qnbhs7iivFNs',
-            clientId: '64644619494-tous9hjfmhdpmcfnj18b067tnj3ve9f9.apps.googleusercontent.com',
-            discoveryDocs: [
-                'https://sheets.googleapis.com/$discovery/rest?version=v4',
-                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
-            ],
-            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file'
-        };
 
         let isGoogleAPIReady = false;
 
@@ -805,76 +806,74 @@
         }
 
         // Autenticar con Google
-        async function authenticateGoogle() {
-            return new Promise((resolve, reject) => {
-                console.log('Cargando gapi client...');
-                console.log('Dominio actual:', window.location.origin);
-                
-                gapi.load('client:auth2', {
-                    callback: async () => {
-                        try {
-                            console.log('GAPI cargado, inicializando...');
-                            console.log('Config:', GOOGLE_CONFIG);
-                            
-                            const initConfig = {
-                                apiKey: GOOGLE_CONFIG.apiKey,
-                                clientId: GOOGLE_CONFIG.clientId,
-                                discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
-                                scope: GOOGLE_CONFIG.scopes
-                            };
-                            
-                            console.log('Configuración de inicialización:', initConfig);
-                            
-                            const initResult = await gapi.client.init(initConfig);
-                            console.log('Resultado de inicialización:', initResult);
-                            
-                            console.log('Google API inicializada exitosamente');
-                            const authInstance = gapi.auth2.getAuthInstance();
-                            console.log('Auth instance obtenida:', authInstance);
-                            
-                            const isSignedIn = authInstance.isSignedIn.get();
-                            console.log('¿Usuario ya autenticado?', isSignedIn);
-                            
-                            if (!isSignedIn) {
-                                console.log('Solicitando login...');
-                                try {
-                                    console.log('Llamando a signIn()...');
-                                    const user = await authInstance.signIn({
-                                        prompt: 'select_account'
-                                    });
-                                    console.log('Login exitoso:', user.getBasicProfile().getName());
-                                } catch (loginError) {
-                                    console.error('Error en login:', loginError);
-                                    if (loginError.error === 'popup_blocked_by_browser') {
-                                        reject(new Error('Popup bloqueado por el navegador. Permite popups para este sitio.'));
-                                    } else if (loginError.error === 'access_denied') {
-                                        reject(new Error('Acceso denegado por el usuario.'));
-                                    } else {
-                                        reject(loginError);
-                                    }
-                                    return;
-                                }
-                            }
-                            
-                            console.log('Autenticación completada exitosamente');
-                            resolve();
-                            
-                        } catch (error) {
-                            console.error('Error en inicialización:', error);
-                            console.error('Detalles del error:', error.details);
-                            
-                            if (error.error === 'idpiframe_initialization_failed') {
-                                reject(new Error('Error de inicialización. Verifica que el dominio esté autorizado en Google Cloud Console.'));
-                            } else {
-                                reject(error);
-                            }
-                        }
+        // Inicialización GIS cuando la página carga
+        function initializeGIS() {
+            return new Promise((resolve) => {
+                console.log('🔄 Inicializando Google Identity Services...');
+
+                // Inicializar token client para OAuth 2.0
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (tokenResponse) => {
+                        console.log('✅ Token recibido:', tokenResponse);
+                        accessToken = tokenResponse.access_token;
+                        resolve();
                     },
-                    onerror: (error) => {
-                        console.error('Error cargando GAPI:', error);
-                        reject(new Error('Error cargando Google API'));
+                    error_callback: (error) => {
+                        console.error('❌ Error en OAuth:', error);
+                        reject(error);
                     }
                 });
+
+                // Inicializar gapi client
+                gapi.load('client', async () => {
+                    try {
+                        await gapi.client.init({
+                            apiKey: API_KEY,
+                            discoveryDocs: [
+                                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+                                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+                            ]
+                        });
+                        console.log('✅ GAPI Client inicializado');
+                        isGoogleApiLoaded = true;
+                    } catch (error) {
+                        console.error('❌ Error inicializando GAPI Client:', error);
+                    }
+                });
+            });
+        }
+
+        async function authenticateGoogle() {
+            return new Promise((resolve, reject) => {
+                console.log('🔐 Iniciando autenticación OAuth...');
+
+                if (!tokenClient) {
+                    reject(new Error('Token client no inicializado'));
+                    return;
+                }
+
+                // Configurar callback del token
+                tokenClient.callback = (resp) => {
+                    if (resp.error !== undefined) {
+                        console.error('❌ Error en OAuth:', resp);
+                        reject(resp);
+                        return;
+                    }
+                    console.log('✅ Autenticación exitosa');
+                    accessToken = resp.access_token;
+
+                    // Configurar el token en gapi client
+                    gapi.client.setToken({
+                        access_token: accessToken
+                    });
+
+                    resolve();
+                };
+
+                // Solicitar token
+                tokenClient.requestAccessToken({prompt: 'consent'});
             });
         }
 
@@ -1113,12 +1112,18 @@
             const div = document.createElement('div');
             div.className = tipo;
             div.textContent = mensaje;
-            
+
             const container = document.querySelector('.container');
             container.appendChild(div);
-            
+
             setTimeout(() => div.remove(), 5000);
         }
+
+        // Inicializar cuando la página carga
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página cargada, inicializando GIS...');
+            initializeGIS();
+        });
     </script>
 </body>
 </html>
