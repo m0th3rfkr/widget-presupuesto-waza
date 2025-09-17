@@ -304,95 +304,64 @@
                     try {
                         const newSheetSheetId = createResponse.result.sheets[0].properties.sheetId;
 
-                        // Método más directo: usar copyPaste para copiar formato completo
-                        log('🎨 Copiando formato usando copyPaste...');
+                        // Obtener el formato del template original
+                        log('📋 Obteniendo formato del template...');
+                        const templateSheetInfo = await gapi.client.sheets.spreadsheets.get({
+                            spreadsheetId: templateId,
+                            includeGridData: true,
+                            ranges: ['A1:Z100']
+                        });
 
-                        try {
-                            // Método 1: Simplificar y usar efectiveFormat
-                            log('📋 Método simplificado: copiar estructura básica...');
+                        log('✅ Formato del template obtenido');
 
-                            // Usar un enfoque más simple - crear un nuevo spreadsheet basado en el template
-                            const templateBasicInfo = await gapi.client.sheets.spreadsheets.get({
-                                spreadsheetId: templateId
-                            });
+                        // Copiar el formato celda por celda desde el template
+                        const templateSheet = templateSheetInfo.result.sheets[0];
+                        const templateGridData = templateSheet.data[0];
 
-                            log('✅ Info básica del template obtenida');
+                        if (templateGridData && templateGridData.rowData) {
+                            log('📝 Aplicando formato completo del template...');
 
-                            // Intentar obtener todo el rango del template con formato
-                            const templateFullData = await gapi.client.sheets.spreadsheets.values.get({
-                                spreadsheetId: templateId,
-                                range: 'A1:Z50',
-                                valueRenderOption: 'FORMATTED_VALUE',
-                                dateTimeRenderOption: 'FORMATTED_STRING'
-                            });
+                            // Aplicar formato fila por fila
+                            const formatRequests = [];
 
-                            log('✅ Datos completos del template obtenidos');
-                            log('✅ Formato copiado usando copyPaste');
-
-                        } catch (copyError) {
-                            log(`⚠️ Error con copyPaste: ${copyError.message}`);
-                            log('🔄 Intentando método alternativo...');
-
-                            // Método alternativo: obtener formato detallado del template
-                            const templateSheetInfo = await gapi.client.sheets.spreadsheets.get({
-                                spreadsheetId: templateId,
-                                includeGridData: true,
-                                ranges: ['A1:Z50']
-                            });
-
-                            log('✅ Formato del template obtenido');
-
-                            // Copiar el formato celda por celda desde el template
-                            const templateSheet = templateSheetInfo.result.sheets[0];
-                            const templateGridData = templateSheet.data[0];
-
-                            if (templateGridData && templateGridData.rowData) {
-                                log('📝 Aplicando formato detallado del template...');
-
-                                // Aplicar formato fila por fila
-                                const formatRequests = [];
-
-                                templateGridData.rowData.forEach((row, rowIndex) => {
-                                    if (row.values) {
-                                        row.values.forEach((cell, colIndex) => {
-                                            // Copiar formato incluso si está vacío (para preservar estructura)
-                                            if (cell.userEnteredFormat || cell.effectiveFormat) {
-                                                const format = cell.userEnteredFormat || cell.effectiveFormat;
-                                                formatRequests.push({
-                                                    repeatCell: {
-                                                        range: {
-                                                            sheetId: newSheetSheetId,
-                                                            startRowIndex: rowIndex,
-                                                            endRowIndex: rowIndex + 1,
-                                                            startColumnIndex: colIndex,
-                                                            endColumnIndex: colIndex + 1
-                                                        },
-                                                        cell: {
-                                                            userEnteredFormat: format
-                                                        },
-                                                        fields: 'userEnteredFormat'
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }
-                                });
-
-                                // Aplicar todos los formatos en lotes
-                                const batchSize = 50;
-                                for (let i = 0; i < formatRequests.length; i += batchSize) {
-                                    const batch = formatRequests.slice(i, i + batchSize);
-                                    await gapi.client.sheets.spreadsheets.batchUpdate({
-                                        spreadsheetId: newSheetId,
-                                        resource: {
-                                            requests: batch
+                            templateGridData.rowData.forEach((row, rowIndex) => {
+                                if (row.values) {
+                                    row.values.forEach((cell, colIndex) => {
+                                        if (cell.userEnteredFormat) {
+                                            formatRequests.push({
+                                                repeatCell: {
+                                                    range: {
+                                                        sheetId: newSheetSheetId,
+                                                        startRowIndex: rowIndex,
+                                                        endRowIndex: rowIndex + 1,
+                                                        startColumnIndex: colIndex,
+                                                        endColumnIndex: colIndex + 1
+                                                    },
+                                                    cell: {
+                                                        userEnteredFormat: cell.userEnteredFormat
+                                                    },
+                                                    fields: 'userEnteredFormat'
+                                                }
+                                            });
                                         }
                                     });
-                                    log(`✅ Aplicado formato lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(formatRequests.length/batchSize)}`);
                                 }
+                            });
 
-                                log('✅ Formato detallado aplicado desde template');
+                            // Aplicar todos los formatos en lotes para evitar límites de API
+                            const batchSize = 100;
+                            for (let i = 0; i < formatRequests.length; i += batchSize) {
+                                const batch = formatRequests.slice(i, i + batchSize);
+                                await gapi.client.sheets.spreadsheets.batchUpdate({
+                                    spreadsheetId: newSheetId,
+                                    resource: {
+                                        requests: batch
+                                    }
+                                });
+                                log(`✅ Aplicado formato lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(formatRequests.length/batchSize)}`);
                             }
+
+                            log('✅ Formato completo aplicado desde template');
                         }
 
                         // Formato para headers principales (azul oscuro)
