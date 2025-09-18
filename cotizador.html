@@ -1134,9 +1134,13 @@
 
                 // 4. Primero llenar datos sin insertar filas (para evitar errores 400)
                 console.log('🔧 Llenando datos en posiciones existentes primero...');
-                await fillSectionData(sheetId, 'Arquitectura Técnica', arquitectura, posArquitectura, config);
-                await fillSectionData(sheetId, 'Requisitos Funcionales', funcionales, posFuncionales, config);
-                await fillSectionData(sheetId, 'Requisitos No Funcionales', noFuncionales, posNoFuncionales, config);
+
+                // Contador global para numeración continua 1-12
+                let contadorGlobal = 1;
+
+                contadorGlobal = await fillSectionData(sheetId, 'Arquitectura Técnica', arquitectura, posArquitectura, config, contadorGlobal);
+                contadorGlobal = await fillSectionData(sheetId, 'Requisitos Funcionales', funcionales, posFuncionales, config, contadorGlobal);
+                contadorGlobal = await fillSectionData(sheetId, 'Requisitos No Funcionales', noFuncionales, posNoFuncionales, config, contadorGlobal);
 
                 console.log('✅ Datos llenados correctamente con expansión dinámica');
 
@@ -1147,13 +1151,13 @@
         }
 
         // Llenar datos de una sección específica
-        async function fillSectionData(sheetId, sectionName, componentes, startRow, config) {
+        async function fillSectionData(sheetId, sectionName, componentes, startRow, config, contadorInicial = 1) {
             if (componentes.length === 0) {
                 console.log(`⚠️ Sin componentes para ${sectionName}`);
-                return;
+                return contadorInicial; // Devolver el contador sin cambios
             }
 
-            console.log(`📝 Llenando ${sectionName}: ${componentes.length} componentes desde fila ${startRow}`);
+            console.log(`📝 Llenando ${sectionName}: ${componentes.length} componentes desde fila ${startRow}, numeración desde ${contadorInicial}`);
 
             const rows = componentes.map((comp, index) => {
                 const costoBase = comp.costoCliente || 0;
@@ -1163,7 +1167,7 @@
                 const markup = config.markup || 40;
 
                 return [
-                    index + 1, // Numeración en columna A
+                    contadorInicial + index, // Numeración continua en columna A
                     comp.nombre || 'Sin nombre',
                     comp.descripcion || `Componente de ${sectionName}`,
                     1,
@@ -1195,6 +1199,9 @@
                 });
 
                 console.log(`✅ ${sectionName} llenada: ${componentes.length} componentes en ${range}`);
+
+                // Devolver el próximo número a usar
+                return contadorInicial + componentes.length;
             } catch (error) {
                 console.error(`❌ Error llenando ${sectionName}:`, error);
                 throw error;
