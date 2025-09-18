@@ -360,12 +360,49 @@
             };
         }
         
+        // Calcular resumen para formato transformado
+        function calculateResumen(componentes, config) {
+            const resumen = {
+                horasTotal: 0,
+                horasIA: 0,
+                horasHumanas: 0,
+                costoTotal: 0,
+                costoIA: 0,
+                costoHumanos: 0,
+                costoCliente: 0,
+                componentes: componentes.length
+            };
+
+            componentes.forEach(comp => {
+                resumen.horasTotal += comp.horas || 0;
+                resumen.horasIA += comp.horasIA || 0;
+                resumen.horasHumanas += comp.horasHumanas || 0;
+                resumen.costoCliente += comp.costoCliente || 0;
+            });
+
+            // Aplicar markup
+            resumen.costoClienteFinal = Math.round(resumen.costoCliente * (1 + config.markup / 100));
+
+            return resumen;
+        }
+
         function procesarBuildingBlocks(data, config) {
             const componentes = [];
             const categorias = {};
             let idCounter = 1;
-            
-            for (const [categoriaId, categoria] of Object.entries(data.categories)) {
+
+            // Detectar si ya está transformado (tiene data.componentes)
+            if (data.componentes) {
+                // Formato ya transformado - usar directamente
+                return {
+                    componentes: data.componentes,
+                    categorias: {},
+                    resumen: calculateResumen(data.componentes, config)
+                };
+            }
+
+            // Formato original - procesar como antes
+            for (const [categoriaId, categoria] of Object.entries(data.categories || {})) {
                 // Filtrar categorías si se especificó
                 if (config.categoriasFiltro && 
                     !config.categoriasFiltro.some(filtro => 
