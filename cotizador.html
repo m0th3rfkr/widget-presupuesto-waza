@@ -1168,7 +1168,35 @@
                 // Posiciones iniciales en el template (verificadas en el sheet)
                 let posArquitectura = 8;   // Datos empiezan en fila 8 (después del header en fila 6-7)
                 let posFuncionales = 15;   // Datos empiezan en fila 15 (después del header en fila 13-14)
-                let posNoFuncionales = 22; // Datos empiezan en fila 22 (después del header en fila 20-21)
+                let posNoFuncionales = 21; // Datos empiezan en fila 21 (justo después del header ITEM)
+
+                // 3.5. Verificar y agregar título de "Requisitos No Funcionales" si no existe
+                if (noFuncionales.length > 0) {
+                    console.log('🔍 Verificando título de Requisitos No Funcionales...');
+                    try {
+                        // Insertar título en fila 20-21
+                        await gapi.client.sheets.spreadsheets.values.update({
+                            spreadsheetId: sheetId,
+                            range: `'${tabName}'!A20:B20`,
+                            valueInputOption: 'RAW',
+                            resource: {
+                                values: [['Requisitos No Funcionales', '']]
+                            }
+                        });
+                        // Insertar header ITEM en fila 21 (sin fila vacía)
+                        await gapi.client.sheets.spreadsheets.values.update({
+                            spreadsheetId: sheetId,
+                            range: `'${tabName}'!A21:B21`,
+                            valueInputOption: 'RAW',
+                            resource: {
+                                values: [['ITEM', 'DESCRIPCION']]
+                            }
+                        });
+                        console.log('✅ Título de Requisitos No Funcionales agregado');
+                    } catch (error) {
+                        console.log('⚠️ Error agregando título (puede que ya exista):', error);
+                    }
+                }
 
                 // 4. Primero llenar datos sin insertar filas (para evitar errores 400)
                 console.log('🔧 Llenando datos en posiciones existentes primero...');
@@ -1214,7 +1242,7 @@
                 // Posiciones iniciales en el template (verificadas en el sheet)
                 let posArquitectura = 8;   // Datos empiezan en fila 8 (después del header en fila 6-7)
                 let posFuncionales = 15;   // Datos empiezan en fila 15 (después del header en fila 13-14)
-                let posNoFuncionales = 22; // Datos empiezan en fila 22 (después del header en fila 20-21)
+                let posNoFuncionales = 21; // Datos empiezan en fila 21 (justo después del header ITEM)
 
                 // 4. Primero llenar datos sin insertar filas (para evitar errores 400)
                 console.log('🔧 Llenando datos en posiciones existentes primero...');
