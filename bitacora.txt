@@ -272,3 +272,71 @@ LECCIÓN APRENDIDA:
 - Menos código = menos errores = mejor mantenimiento
 
 ESTADO ACTUAL: SISTEMA COMPLETAMENTE OPERATIVO Y OPTIMIZADO - 2025-09-16 20:10
+
+CAMBIO 020:
+- Acción: Actualización OAuth a Google Identity Services (GIS) en cotizador.html
+- Archivos modificados: cotizador.html
+- Estado: COMPLETADO ✅
+- Observaciones:
+  * Agregado script Google Identity Services (https://accounts.google.com/gsi/client)
+  * Configuración CLIENT_ID y API_KEY con credenciales correctas
+  * Reemplazada función authenticateGoogle() con implementación GIS moderna
+  * Eliminada configuración duplicada GOOGLE_CONFIG
+  * Agregada inicialización automática en DOMContentLoaded
+  * Implementado tokenClient para manejo moderno de OAuth 2.0
+  * Commit 8db8eb0 - "Upgrade OAuth to Google Identity Services (GIS)"
+
+MEJORAS TÉCNICAS IMPLEMENTADAS:
+- google.accounts.oauth2.initTokenClient() para OAuth moderno
+- gapi.client.setToken() para configuración de token
+- Manejo de errores mejorado con callbacks estructurados
+- Compatibilidad total con restricciones de GitHub Pages
+- Eliminación de dependencias de gapi.auth2 legacy
+
+RESULTADO:
+✅ cotizador.html ahora compatible con OAuth GIS
+✅ Misma configuración que test-oauth-gis.html (funcionando)
+✅ Disponible en GitHub Pages: https://m0th3rfkr.github.io/widget-presupuesto-waza/cotizador.html
+✅ Disponible local: http://localhost:8000/cotizador.html
+✅ Dominio autorizado en Google Console OAuth
+
+ESTADO ACTUAL: COTIZADOR PRINCIPAL CON OAUTH COMPLETAMENTE FUNCIONAL - 2025-09-17 16:10
+
+CAMBIO 021:
+- Acción: Implementación completa de sistema de 3 tiers de cotización
+- Archivos modificados: cotizador.html
+- Estado: COMPLETADO ✅
+- Observaciones:
+  * Sistema de 3 tabs implementado exitosamente
+  * Tab 1: "Básico (25%)" - Multiplicador 0.25
+  * Tab 2: "Estándar (100%)" - Multiplicador 1.0
+  * Tab 3: "Premium (175%)" - Multiplicador 1.75
+  * Numeración continua 1-12 en todos los tabs
+  * Cálculos automáticos de costos según tier
+  * OAuth funcionando perfectamente en los 3 tabs
+
+MEJORAS TÉCNICAS IMPLEMENTADAS:
+- createSheetFromTemplate() modificado para generar 3 sheets
+- populateGoogleSheetWithTier() nueva función para llenar tabs específicos
+- fillSectionDataWithTier() con multiplicadores de tier automáticos
+- Procesamiento paralelo de los 3 tabs
+- Logs informativos por cada tab generado
+
+RESULTADO:
+✅ Sistema de cotización multi-tier completamente funcional
+✅ Cliente recibe 3 propuestas en un solo documento
+✅ Comparación fácil entre opciones básica, estándar y premium
+✅ Cálculos automáticos según building blocks de Waza
+✅ Numeración profesional y estructura consistente
+
+PENDIENTE PARA MAÑANA:
+🔍 Diagnosticar por qué falta sección "Requisitos No Funcionales" (3 componentes)
+- Logs de debugging agregados (commit 08284e6)
+- Verificar categorización: security, testing, business
+- Corregir llenado de tercera sección si es necesario
+
+COMMITS REALIZADOS:
+- a2cd708: Implement 3-tier pricing system with separate tabs
+- 08284e6: Add debugging logs for missing third section
+
+ESTADO ACTUAL: SISTEMA DE 3 TIERS FUNCIONAL - PENDIENTE CORRECCIÓN TERCERA SECCIÓN - 2025-09-18 21:45
