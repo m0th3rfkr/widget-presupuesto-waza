@@ -1159,7 +1159,8 @@
                 // 2. Categorizar componentes por sección
                 const { arquitectura, funcionales, noFuncionales } = categorizeComponents(datos.componentes);
 
-                console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
+                console.log(`📊 ${tabName} - Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
+                console.log('🔍 Componentes No Funcionales:', noFuncionales.map(c => c.nombre));
 
                 // 3. Calcular filas necesarias y posiciones (basadas en la estructura real del template)
                 const minFilasPorSeccion = 3;
