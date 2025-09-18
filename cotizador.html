@@ -212,6 +212,12 @@
             const componentes = [];
             const tarifaBase = 500; // Default tarifa base
 
+            // Validar datos de entrada
+            if (!newData || !newData.categories) {
+                console.error('❌ Datos inválidos para transformación');
+                return { componentes: [], categories: [] };
+            }
+
             // Mapear categorías a tipos esperados
             const categoryMapping = {
                 'arquitectura_tecnica': 'devops',
@@ -220,16 +226,28 @@
             };
 
             Object.entries(newData.categories).forEach(([categoryKey, category]) => {
+                // Validar que category y building_blocks existan
+                if (!category || !category.building_blocks) {
+                    console.warn(`⚠️ Categoría ${categoryKey} no tiene building_blocks`);
+                    return;
+                }
+
                 Object.entries(category.building_blocks).forEach(([blockKey, block]) => {
+                    // Validar datos del bloque
+                    if (!block || !block.name) {
+                        console.warn(`⚠️ Bloque ${blockKey} no tiene datos válidos`);
+                        return;
+                    }
+
                     const categoria = categoryMapping[categoryKey] || 'features';
                     const complejidad = 'intermedio'; // Default complexity
 
-                    const horas = block.hours[complejidad] || 40;
+                    const horas = (block.hours && block.hours[complejidad]) ? block.hours[complejidad] : 40;
                     const costoCliente = horas * tarifaBase;
 
                     componentes.push({
-                        nombre: block.name,
-                        descripcion: block.description,
+                        nombre: block.name || `Componente ${blockKey}`,
+                        descripcion: block.description || 'Sin descripción',
                         categoria: categoria,
                         complejidad: complejidad,
                         horas: horas,
@@ -262,8 +280,13 @@
                     // Detectar formato y transformar si es necesario
                     if (data.categories && data.metadata) {
                         // Nuevo formato - transformar a formato esperado
-                        buildingBlocksData = transformNewFormatToOld(data);
-                        mostrarMensaje('JSON nuevo formato transformado correctamente', 'success');
+                        try {
+                            buildingBlocksData = transformNewFormatToOld(data);
+                            mostrarMensaje('JSON nuevo formato transformado correctamente', 'success');
+                        } catch (transformError) {
+                            console.error('❌ Error en transformación:', transformError);
+                            throw new Error('Error transformando el formato JSON: ' + transformError.message);
+                        }
                     } else if (data.componentes) {
                         // Formato antiguo
                         buildingBlocksData = data;
