@@ -1061,6 +1061,9 @@
             console.log(`➕ Insertando ${numRows} filas en posición ${startRowIndex}`);
 
             try {
+                // Convertir de índice de fila (1-based) a índice API (0-based)
+                const apiStartIndex = startRowIndex - 1;
+
                 await gapi.client.sheets.spreadsheets.batchUpdate({
                     spreadsheetId: sheetId,
                     resource: {
@@ -1069,15 +1072,15 @@
                                 range: {
                                     sheetId: 0,
                                     dimension: 'ROWS',
-                                    startIndex: startRowIndex,
-                                    endIndex: startRowIndex + numRows
+                                    startIndex: apiStartIndex,
+                                    endIndex: apiStartIndex + numRows
                                 },
                                 inheritFromBefore: true
                             }
                         }]
                     }
                 });
-                console.log(`✅ ${numRows} filas insertadas exitosamente`);
+                console.log(`✅ ${numRows} filas insertadas exitosamente en posición ${startRowIndex}`);
             } catch (error) {
                 console.error('❌ Error insertando filas:', error);
                 throw error;
@@ -1176,36 +1179,49 @@
 
             console.log(`📝 Llenando ${sectionName}: ${componentes.length} componentes desde fila ${startRow}`);
 
-            const rows = componentes.map(comp => [
-                comp.nombre,
-                comp.descripcion || `Componente de ${sectionName}`,
-                1,
-                Math.round(comp.costoCliente / 500 || 0), // Convertir a MXN base
-                Math.round(comp.horasIA || comp.horas * 0.7),
-                Math.round(comp.horasIA || comp.horas * 0.7),
-                Math.round(comp.costoCliente / 500 || 0),
-                1,
-                Math.round(comp.costoCliente * 0.3 / 500 || 0),
-                Math.round(comp.horasHumanas || comp.horas * 0.3),
-                'Dev Tools',
-                Math.round(comp.costoCliente / 500 || 0),
-                `${config.markup}%`,
-                Math.round(comp.costoCliente * (1 + config.markup/100) / 500 || 0)
-            ]);
+            const rows = componentes.map(comp => {
+                const costoBase = comp.costoCliente || 0;
+                const horasTotal = comp.horas || 0;
+                const horasIA = comp.horasIA || (horasTotal * 0.7);
+                const horasHumanas = comp.horasHumanas || (horasTotal * 0.3);
+                const markup = config.markup || 40;
+
+                return [
+                    comp.nombre || 'Sin nombre',
+                    comp.descripcion || `Componente de ${sectionName}`,
+                    1,
+                    Math.round(costoBase / 500) || 0,
+                    Math.round(horasIA) || 0,
+                    Math.round(horasIA) || 0,
+                    Math.round(costoBase / 500) || 0,
+                    1,
+                    Math.round(costoBase * 0.3 / 500) || 0,
+                    Math.round(horasHumanas) || 0,
+                    'Dev Tools',
+                    Math.round(costoBase / 500) || 0,
+                    `${markup}%`,
+                    Math.round(costoBase * (1 + markup/100) / 500) || 0
+                ];
+            });
 
             const endRow = startRow + componentes.length - 1;
             const range = `A${startRow}:N${endRow}`;
 
-            await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: sheetId,
-                range: range,
-                valueInputOption: 'RAW',
-                resource: {
-                    values: rows
-                }
-            });
+            try {
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: sheetId,
+                    range: range,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: rows
+                    }
+                });
 
-            console.log(`✅ ${sectionName} llenada: ${componentes.length} componentes en ${range}`);
+                console.log(`✅ ${sectionName} llenada: ${componentes.length} componentes en ${range}`);
+            } catch (error) {
+                console.error(`❌ Error llenando ${sectionName}:`, error);
+                throw error;
+            }
         }
 
         // Llenar datos en Google Sheet inteligentemente (insertar/eliminar filas) - BACKUP
