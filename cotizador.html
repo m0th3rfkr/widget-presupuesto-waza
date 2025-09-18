@@ -1056,9 +1056,54 @@
             }
         }
 
-        // Llenar datos en Google Sheet (método simplificado)
+        // Insertar filas dinámicamente en Google Sheets
+        async function insertRowsInSheet(sheetId, startRowIndex, numRows) {
+            console.log(`➕ Insertando ${numRows} filas en posición ${startRowIndex}`);
+
+            try {
+                await gapi.client.sheets.spreadsheets.batchUpdate({
+                    spreadsheetId: sheetId,
+                    resource: {
+                        requests: [{
+                            insertDimension: {
+                                range: {
+                                    sheetId: 0,
+                                    dimension: 'ROWS',
+                                    startIndex: startRowIndex,
+                                    endIndex: startRowIndex + numRows
+                                },
+                                inheritFromBefore: true
+                            }
+                        }]
+                    }
+                });
+                console.log(`✅ ${numRows} filas insertadas exitosamente`);
+            } catch (error) {
+                console.error('❌ Error insertando filas:', error);
+                throw error;
+            }
+        }
+
+        // Categorizar building blocks por sección según categorías Waza
+        function categorizeComponents(componentes) {
+            const arquitectura = componentes.filter(c =>
+                c.categoria && (c.categoria === 'frontend' || c.categoria === 'infrastructure' || c.categoria === 'devops')
+            );
+
+            const funcionales = componentes.filter(c =>
+                c.categoria && (c.categoria === 'backend' || c.categoria === 'integration' || c.categoria === 'database')
+            );
+
+            const noFuncionales = componentes.filter(c =>
+                c.categoria && (c.categoria === 'security' || c.categoria === 'testing' || c.categoria === 'business')
+            );
+
+            return { arquitectura, funcionales, noFuncionales };
+        }
+
+        // Llenar datos en Google Sheet (método inteligente y dinámico)
         async function populateGoogleSheetSimple(sheetId, datos, config) {
-            console.log('📋 Llenando datos simplificado...');
+            console.log('📋 Llenando datos con expansión dinámica...');
 
             try {
                 // 1. Actualizar nombre del proyecto
@@ -1071,80 +1116,96 @@
                     }
                 });
 
-                // 2. Categorizar componentes
-                const arquitectura = datos.componentes.filter(c =>
-                    c.categoria && (c.categoria === 'frontend' || c.categoria === 'backend' || c.categoria === 'devops')
-                );
-                const funcionales = datos.componentes.filter(c =>
-                    c.categoria && !['frontend', 'backend', 'devops', 'security', 'performance', 'monitoring'].includes(c.categoria)
-                );
+                // 2. Categorizar componentes por sección
+                const { arquitectura, funcionales, noFuncionales } = categorizeComponents(datos.componentes);
 
-                console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}`);
+                console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
 
-                // 3. Llenar sección Arquitectura (filas 8-10)
-                if (arquitectura.length > 0) {
-                    const archRows = arquitectura.slice(0, 3).map(comp => [
-                        comp.nombre,
-                        comp.descripcion || 'Componente de arquitectura',
-                        1,
-                        Math.round(comp.costoCliente || 0),
-                        Math.round(comp.horasIA || 0),
-                        Math.round(comp.horasIA || 0),
-                        Math.round(comp.costoCliente || 0),
-                        1,
-                        Math.round(comp.costoCliente * 0.3 || 0),
-                        Math.round(comp.horasIA * 2 || 0),
-                        'Dev Tools',
-                        Math.round(comp.costoCliente || 0),
-                        `${config.markup}%`,
-                        Math.round(comp.costoCliente * (1 + config.markup/100) || 0)
-                    ]);
+                // 3. Calcular filas necesarias y posiciones
+                const minFilasPorSeccion = 3;
 
-                    await gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: sheetId,
-                        range: 'A8:N10',
-                        valueInputOption: 'RAW',
-                        resource: {
-                            values: archRows
-                        }
-                    });
+                // Posiciones iniciales en el template
+                let posArquitectura = 8;   // Filas 8-10
+                let posFuncionales = 15;   // Filas 15-17
+                let posNoFuncionales = 22; // Filas 22-24 (asumiendo)
+
+                // 4. Expandir sección Arquitectura si es necesario
+                if (arquitectura.length > minFilasPorSeccion) {
+                    const filasExtra = arquitectura.length - minFilasPorSeccion;
+                    await insertRowsInSheet(sheetId, posArquitectura + minFilasPorSeccion, filasExtra);
+
+                    // Ajustar posiciones siguientes
+                    posFuncionales += filasExtra;
+                    posNoFuncionales += filasExtra;
                 }
 
-                // 4. Llenar sección Funcionales (filas 15-17)
-                if (funcionales.length > 0) {
-                    const funcRows = funcionales.slice(0, 3).map(comp => [
-                        comp.nombre,
-                        comp.descripcion || 'Componente funcional',
-                        1,
-                        Math.round(comp.costoCliente || 0),
-                        Math.round(comp.horasIA || 0),
-                        Math.round(comp.horasIA || 0),
-                        Math.round(comp.costoCliente || 0),
-                        1,
-                        Math.round(comp.costoCliente * 0.3 || 0),
-                        Math.round(comp.horasIA * 2 || 0),
-                        'Dev Tools',
-                        Math.round(comp.costoCliente || 0),
-                        `${config.markup}%`,
-                        Math.round(comp.costoCliente * (1 + config.markup/100) || 0)
-                    ]);
+                // 5. Expandir sección Funcionales si es necesario
+                if (funcionales.length > minFilasPorSeccion) {
+                    const filasExtra = funcionales.length - minFilasPorSeccion;
+                    await insertRowsInSheet(sheetId, posFuncionales + minFilasPorSeccion, filasExtra);
 
-                    await gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: sheetId,
-                        range: 'A15:N17',
-                        valueInputOption: 'RAW',
-                        resource: {
-                            values: funcRows
-                        }
-                    });
+                    // Ajustar posición siguiente
+                    posNoFuncionales += filasExtra;
                 }
 
-                console.log('✅ Datos llenados correctamente');
+                // 6. Expandir sección No Funcionales si es necesario
+                if (noFuncionales.length > minFilasPorSeccion) {
+                    const filasExtra = noFuncionales.length - minFilasPorSeccion;
+                    await insertRowsInSheet(sheetId, posNoFuncionales + minFilasPorSeccion, filasExtra);
+                }
+
+                // 7. Llenar datos en cada sección
+                await fillSectionData(sheetId, 'Arquitectura Técnica', arquitectura, posArquitectura, config);
+                await fillSectionData(sheetId, 'Requisitos Funcionales', funcionales, posFuncionales, config);
+                await fillSectionData(sheetId, 'Requisitos No Funcionales', noFuncionales, posNoFuncionales, config);
+
+                console.log('✅ Datos llenados correctamente con expansión dinámica');
 
             } catch (error) {
                 console.error('❌ Error llenando datos:', error);
                 throw error;
             }
+        }
+
+        // Llenar datos de una sección específica
+        async function fillSectionData(sheetId, sectionName, componentes, startRow, config) {
+            if (componentes.length === 0) {
+                console.log(`⚠️ Sin componentes para ${sectionName}`);
+                return;
+            }
+
+            console.log(`📝 Llenando ${sectionName}: ${componentes.length} componentes desde fila ${startRow}`);
+
+            const rows = componentes.map(comp => [
+                comp.nombre,
+                comp.descripcion || `Componente de ${sectionName}`,
+                1,
+                Math.round(comp.costoCliente / 500 || 0), // Convertir a MXN base
+                Math.round(comp.horasIA || comp.horas * 0.7),
+                Math.round(comp.horasIA || comp.horas * 0.7),
+                Math.round(comp.costoCliente / 500 || 0),
+                1,
+                Math.round(comp.costoCliente * 0.3 / 500 || 0),
+                Math.round(comp.horasHumanas || comp.horas * 0.3),
+                'Dev Tools',
+                Math.round(comp.costoCliente / 500 || 0),
+                `${config.markup}%`,
+                Math.round(comp.costoCliente * (1 + config.markup/100) / 500 || 0)
+            ]);
+
+            const endRow = startRow + componentes.length - 1;
+            const range = `A${startRow}:N${endRow}`;
+
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: sheetId,
+                range: range,
+                valueInputOption: 'RAW',
+                resource: {
+                    values: rows
+                }
+            });
+
+            console.log(`✅ ${sectionName} llenada: ${componentes.length} componentes en ${range}`);
         }
 
         // Llenar datos en Google Sheet inteligentemente (insertar/eliminar filas) - BACKUP
