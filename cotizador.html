@@ -1124,40 +1124,16 @@
 
                 console.log(`📊 Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
 
-                // 3. Calcular filas necesarias y posiciones
+                // 3. Calcular filas necesarias y posiciones (basadas en la estructura real del template)
                 const minFilasPorSeccion = 3;
 
-                // Posiciones iniciales en el template
-                let posArquitectura = 8;   // Filas 8-10
-                let posFuncionales = 15;   // Filas 15-17
-                let posNoFuncionales = 22; // Filas 22-24 (asumiendo)
+                // Posiciones iniciales en el template (verificadas en el sheet)
+                let posArquitectura = 8;   // Datos empiezan en fila 8 (después del header en fila 6-7)
+                let posFuncionales = 15;   // Datos empiezan en fila 15 (después del header en fila 13-14)
+                let posNoFuncionales = 22; // Datos empiezan en fila 22 (después del header en fila 20-21)
 
-                // 4. Expandir sección Arquitectura si es necesario
-                if (arquitectura.length > minFilasPorSeccion) {
-                    const filasExtra = arquitectura.length - minFilasPorSeccion;
-                    await insertRowsInSheet(sheetId, posArquitectura + minFilasPorSeccion, filasExtra);
-
-                    // Ajustar posiciones siguientes
-                    posFuncionales += filasExtra;
-                    posNoFuncionales += filasExtra;
-                }
-
-                // 5. Expandir sección Funcionales si es necesario
-                if (funcionales.length > minFilasPorSeccion) {
-                    const filasExtra = funcionales.length - minFilasPorSeccion;
-                    await insertRowsInSheet(sheetId, posFuncionales + minFilasPorSeccion, filasExtra);
-
-                    // Ajustar posición siguiente
-                    posNoFuncionales += filasExtra;
-                }
-
-                // 6. Expandir sección No Funcionales si es necesario
-                if (noFuncionales.length > minFilasPorSeccion) {
-                    const filasExtra = noFuncionales.length - minFilasPorSeccion;
-                    await insertRowsInSheet(sheetId, posNoFuncionales + minFilasPorSeccion, filasExtra);
-                }
-
-                // 7. Llenar datos en cada sección
+                // 4. Primero llenar datos sin insertar filas (para evitar errores 400)
+                console.log('🔧 Llenando datos en posiciones existentes primero...');
                 await fillSectionData(sheetId, 'Arquitectura Técnica', arquitectura, posArquitectura, config);
                 await fillSectionData(sheetId, 'Requisitos Funcionales', funcionales, posFuncionales, config);
                 await fillSectionData(sheetId, 'Requisitos No Funcionales', noFuncionales, posNoFuncionales, config);
