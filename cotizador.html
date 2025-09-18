@@ -1155,7 +1155,7 @@
 
             console.log(`📝 Llenando ${sectionName}: ${componentes.length} componentes desde fila ${startRow}`);
 
-            const rows = componentes.map(comp => {
+            const rows = componentes.map((comp, index) => {
                 const costoBase = comp.costoCliente || 0;
                 const horasTotal = comp.horas || 0;
                 const horasIA = comp.horasIA || (horasTotal * 0.7);
@@ -1163,6 +1163,7 @@
                 const markup = config.markup || 40;
 
                 return [
+                    index + 1, // Numeración en columna A
                     comp.nombre || 'Sin nombre',
                     comp.descripcion || `Componente de ${sectionName}`,
                     1,
@@ -1181,7 +1182,7 @@
             });
 
             const endRow = startRow + componentes.length - 1;
-            const range = `A${startRow}:N${endRow}`;
+            const range = `A${startRow}:O${endRow}`;  // Expandido a columna O para incluir la numeración
 
             try {
                 await gapi.client.sheets.spreadsheets.values.update({
