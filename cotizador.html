@@ -1197,7 +1197,9 @@
                             resource: {
                                 valueInputOption: 'RAW',
                                 data: [
-                                    { range: `'${tabName}'!A${tituloFuncionales}:B${tituloFuncionales}`, values: [['Requisitos Funcionales', '']] },
+                                    // Título completo que abarca A-B
+                                    { range: `'${tabName}'!A${tituloFuncionales}:A${tituloFuncionales}`, values: [['Requisitos Funcionales']] },
+                                    // Headers correctamente posicionados: ITEM en A, DESCRIPCION en B
                                     { range: `'${tabName}'!A${headerFuncionales}:B${headerFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
                                 ]
                             }
@@ -1216,7 +1218,9 @@
                             resource: {
                                 valueInputOption: 'RAW',
                                 data: [
-                                    { range: `'${tabName}'!A${tituloNoFuncionales}:B${tituloNoFuncionales}`, values: [['Requisitos No Funcionales', '']] },
+                                    // Título completo que abarca solo A (sin valor en B para evitar duplicación)
+                                    { range: `'${tabName}'!A${tituloNoFuncionales}:A${tituloNoFuncionales}`, values: [['Requisitos No Funcionales']] },
+                                    // Headers correctamente posicionados: ITEM en A, DESCRIPCION en B
                                     { range: `'${tabName}'!A${headerNoFuncionales}:B${headerNoFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
                                 ]
                             }
@@ -1279,7 +1283,31 @@
 
                 const requests = [];
 
-                // 2. FORMATEAR TÍTULOS DE SECCIONES CON POSICIONES DINÁMICAS
+                // 2. FUSIONAR Y FORMATEAR TÍTULOS DE SECCIONES CON POSICIONES DINÁMICAS
+
+                // Fusionar celdas para títulos que abarquen A-B
+                requests.push({
+                    mergeCells: {
+                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        mergeType: 'MERGE_ROWS'
+                    }
+                });
+
+                requests.push({
+                    mergeCells: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        mergeType: 'MERGE_ROWS'
+                    }
+                });
+
+                requests.push({
+                    mergeCells: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        mergeType: 'MERGE_ROWS'
+                    }
+                });
+
+                // Formatear títulos después de fusionar
                 // Arquitectura Técnica (fila 6)
                 requests.push({
                     repeatCell: {
@@ -1287,38 +1315,41 @@
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
-                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true },
+                                horizontalAlignment: 'CENTER'
                             }
                         },
-                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
                     }
                 });
 
-                // Requisitos Funcionales (posición dinámica)
+                // Requisitos Funcionales (posición dinámica) - título fusionado A-B
                 requests.push({
                     repeatCell: {
                         range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
-                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true },
+                                horizontalAlignment: 'CENTER'
                             }
                         },
-                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
                     }
                 });
 
-                // Requisitos No Funcionales (posición dinámica)
+                // Requisitos No Funcionales (posición dinámica) - título fusionado A-B
                 requests.push({
                     repeatCell: {
                         range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
-                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true },
+                                horizontalAlignment: 'CENTER'
                             }
                         },
-                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                        fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
                     }
                 });
 
@@ -1482,17 +1513,8 @@
                     }
                 });
 
-                // 4. INSERTAR TÍTULOS FALTANTES EN POSICIONES CORRECTAS
-                await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                    spreadsheetId: sheetId,
-                    resource: {
-                        valueInputOption: 'RAW',
-                        data: [
-                            { range: `'${tabName}'!A20:A20`, values: [['Requisitos No Funcionales']] },
-                            { range: `'${tabName}'!A21:B21`, values: [['ITEM', 'DESCRIPCION']] }
-                        ]
-                    }
-                });
+                // 4. TÍTULOS YA INSERTADOS DINÁMICAMENTE - ELIMINANDO DUPLICACIÓN
+                console.log(`🚫 Saltando inserción de títulos fijos - ya insertados dinámicamente`);
 
                 // 5. APLICAR TODOS LOS FORMATOS
                 await gapi.client.sheets.spreadsheets.batchUpdate({
