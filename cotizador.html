@@ -1199,8 +1199,8 @@
                                 data: [
                                     // Título completo que abarca A-B
                                     { range: `'${tabName}'!A${tituloFuncionales}:A${tituloFuncionales}`, values: [['Requisitos Funcionales']] },
-                                    // Headers correctamente posicionados: ITEM en A, DESCRIPCION en B
-                                    { range: `'${tabName}'!A${headerFuncionales}:B${headerFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
+                                    // Headers correctamente posicionados: ITEM en A, vacía en B, DESCRIPCION en C
+                                    { range: `'${tabName}'!A${headerFuncionales}:C${headerFuncionales}`, values: [['ITEM', '', 'DESCRIPCION']] }
                                 ]
                             }
                         });
@@ -1220,8 +1220,8 @@
                                 data: [
                                     // Título completo que abarca solo A (sin valor en B para evitar duplicación)
                                     { range: `'${tabName}'!A${tituloNoFuncionales}:A${tituloNoFuncionales}`, values: [['Requisitos No Funcionales']] },
-                                    // Headers correctamente posicionados: ITEM en A, DESCRIPCION en B
-                                    { range: `'${tabName}'!A${headerNoFuncionales}:B${headerNoFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
+                                    // Headers correctamente posicionados: ITEM en A, vacía en B, DESCRIPCION en C
+                                    { range: `'${tabName}'!A${headerNoFuncionales}:C${headerNoFuncionales}`, values: [['ITEM', '', 'DESCRIPCION']] }
                                 ]
                             }
                         });
@@ -1353,11 +1353,11 @@
                     }
                 });
 
-                // 3. FORMATEAR HEADERS "ITEM" COMO HEADERS NORMALES (sin fondo azul)
-                // Arquitectura Técnica header (fila 7) - formato normal de header
+                // 3. FORMATEAR HEADERS "ITEM" Y "DESCRIPCION" COMO HEADERS NORMALES
+                // Arquitectura Técnica header (fila 7) - formato normal de header A-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
@@ -1369,10 +1369,10 @@
                     }
                 });
 
-                // Requisitos Funcionales header (posición dinámica) - formato normal
+                // Requisitos Funcionales header (posición dinámica) - formato normal A-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerFuncionales - 1, endRowIndex: posiciones.headerFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerFuncionales - 1, endRowIndex: posiciones.headerFuncionales, startColumnIndex: 0, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
@@ -1384,10 +1384,10 @@
                     }
                 });
 
-                // Requisitos No Funcionales header (posición dinámica) - formato normal
+                // Requisitos No Funcionales header (posición dinámica) - formato normal A-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerNoFuncionales - 1, endRowIndex: posiciones.headerNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerNoFuncionales - 1, endRowIndex: posiciones.headerNoFuncionales, startColumnIndex: 0, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
