@@ -1225,12 +1225,29 @@
             console.log(`🎨 Iniciando formateo completo para tab "${tabName}"`);
 
             try {
+                // 1. OBTENER EL SHEET ID REAL DEL TAB
+                const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: sheetId
+                });
+
+                const targetSheet = spreadsheet.result.sheets.find(sheet =>
+                    sheet.properties.title === tabName
+                );
+
+                if (!targetSheet) {
+                    console.error(`❌ No se encontró el tab "${tabName}"`);
+                    return;
+                }
+
+                const realSheetId = targetSheet.properties.sheetId;
+                console.log(`📋 Usando sheetId real: ${realSheetId} para tab "${tabName}"`);
+
                 const requests = [];
 
-                // 1. FORMATEAR TÍTULOS DE SECCIONES (Azul con texto blanco)
+                // 2. FORMATEAR TÍTULOS DE SECCIONES (Azul con texto blanco)
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1243,7 +1260,7 @@
 
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 12, endRowIndex: 13, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 12, endRowIndex: 13, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1256,7 +1273,7 @@
 
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1267,23 +1284,10 @@
                     }
                 });
 
-                // 2. FORMATEAR HEADERS "ITEM" (Azul con texto blanco)
+                // 3. FORMATEAR HEADERS "ITEM" (Azul con texto blanco)
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 2 },
-                        cell: {
-                            userEnteredFormat: {
-                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
-                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
-                            }
-                        },
-                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
-                    }
-                });
-
-                requests.push({
-                    repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 13, endRowIndex: 14, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1296,7 +1300,7 @@
 
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: 0, startRowIndex: 20, endRowIndex: 21, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 13, endRowIndex: 14, startColumnIndex: 0, endColumnIndex: 2 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1307,7 +1311,20 @@
                     }
                 });
 
-                // 3. INSERTAR TÍTULOS FALTANTES
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: 20, endRowIndex: 21, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // 4. INSERTAR TÍTULOS FALTANTES EN POSICIONES CORRECTAS
                 await gapi.client.sheets.spreadsheets.values.batchUpdate({
                     spreadsheetId: sheetId,
                     resource: {
@@ -1319,7 +1336,7 @@
                     }
                 });
 
-                // 4. APLICAR TODOS LOS FORMATOS
+                // 5. APLICAR TODOS LOS FORMATOS
                 await gapi.client.sheets.spreadsheets.batchUpdate({
                     spreadsheetId: sheetId,
                     resource: { requests }
