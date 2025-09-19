@@ -1210,9 +1210,126 @@
 
                 console.log(`✅ Datos llenados correctamente en tab "${tabName}"`);
 
+                // 6. APLICAR FORMATEO COMPLETO AL FINAL
+                console.log(`🎨 Aplicando formato profesional a tab "${tabName}"...`);
+                await aplicarFormateoCompleto(sheetId, tabName);
+
             } catch (error) {
                 console.error(`❌ Error llenando datos en tab "${tabName}":`, error);
                 throw error;
+            }
+        }
+
+        // APLICAR FORMATEO COMPLETO POST-GENERACIÓN (Solución #3)
+        async function aplicarFormateoCompleto(sheetId, tabName) {
+            console.log(`🎨 Iniciando formateo completo para tab "${tabName}"`);
+
+            try {
+                const requests = [];
+
+                // 1. FORMATEAR TÍTULOS DE SECCIONES (Azul con texto blanco)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 12, endRowIndex: 13, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // 2. FORMATEAR HEADERS "ITEM" (Azul con texto blanco)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 13, endRowIndex: 14, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: 0, startRowIndex: 20, endRowIndex: 21, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // 3. INSERTAR TÍTULOS FALTANTES
+                await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                    spreadsheetId: sheetId,
+                    resource: {
+                        valueInputOption: 'RAW',
+                        data: [
+                            { range: `'${tabName}'!A20:A20`, values: [['Requisitos No Funcionales']] },
+                            { range: `'${tabName}'!A21:B21`, values: [['ITEM', 'DESCRIPCION']] }
+                        ]
+                    }
+                });
+
+                // 4. APLICAR TODOS LOS FORMATOS
+                await gapi.client.sheets.spreadsheets.batchUpdate({
+                    spreadsheetId: sheetId,
+                    resource: { requests }
+                });
+
+                console.log(`✅ Formateo completo aplicado exitosamente a "${tabName}"`);
+
+            } catch (error) {
+                console.error(`❌ Error aplicando formateo a "${tabName}":`, error);
+                // No lanzar error - el formateo es cosmético, no crítico
             }
         }
 
