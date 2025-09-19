@@ -1197,10 +1197,10 @@
                             resource: {
                                 valueInputOption: 'RAW',
                                 data: [
-                                    // Título completo que abarca A-B
-                                    { range: `'${tabName}'!A${tituloFuncionales}:A${tituloFuncionales}`, values: [['Requisitos Funcionales']] },
-                                    // Headers correctamente posicionados: ITEM en A, vacía en B, DESCRIPCION en C
-                                    { range: `'${tabName}'!A${headerFuncionales}:C${headerFuncionales}`, values: [['ITEM', '', 'DESCRIPCION']] }
+                                    // Título en columna B
+                                    { range: `'${tabName}'!B${tituloFuncionales}:B${tituloFuncionales}`, values: [['Requisitos Funcionales']] },
+                                    // Headers: ITEM en B, DESCRIPCION en C
+                                    { range: `'${tabName}'!B${headerFuncionales}:C${headerFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
                                 ]
                             }
                         });
@@ -1218,10 +1218,10 @@
                             resource: {
                                 valueInputOption: 'RAW',
                                 data: [
-                                    // Título completo que abarca solo A (sin valor en B para evitar duplicación)
-                                    { range: `'${tabName}'!A${tituloNoFuncionales}:A${tituloNoFuncionales}`, values: [['Requisitos No Funcionales']] },
-                                    // Headers correctamente posicionados: ITEM en A, vacía en B, DESCRIPCION en C
-                                    { range: `'${tabName}'!A${headerNoFuncionales}:C${headerNoFuncionales}`, values: [['ITEM', '', 'DESCRIPCION']] }
+                                    // Título en columna B
+                                    { range: `'${tabName}'!B${tituloNoFuncionales}:B${tituloNoFuncionales}`, values: [['Requisitos No Funcionales']] },
+                                    // Headers: ITEM en B, DESCRIPCION en C
+                                    { range: `'${tabName}'!B${headerNoFuncionales}:C${headerNoFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
                                 ]
                             }
                         });
@@ -1354,10 +1354,10 @@
                 });
 
                 // 3. FORMATEAR HEADERS "ITEM" Y "DESCRIPCION" COMO HEADERS NORMALES
-                // Arquitectura Técnica header (fila 7) - formato normal de header A-C
+                // Arquitectura Técnica header (fila 7) - formato normal de header B-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 3 },
+                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
@@ -1369,10 +1369,10 @@
                     }
                 });
 
-                // Requisitos Funcionales header (posición dinámica) - formato normal A-C
+                // Requisitos Funcionales header (posición dinámica) - formato normal B-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerFuncionales - 1, endRowIndex: posiciones.headerFuncionales, startColumnIndex: 0, endColumnIndex: 3 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerFuncionales - 1, endRowIndex: posiciones.headerFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
@@ -1384,10 +1384,10 @@
                     }
                 });
 
-                // Requisitos No Funcionales header (posición dinámica) - formato normal A-C
+                // Requisitos No Funcionales header (posición dinámica) - formato normal B-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerNoFuncionales - 1, endRowIndex: posiciones.headerNoFuncionales, startColumnIndex: 0, endColumnIndex: 3 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerNoFuncionales - 1, endRowIndex: posiciones.headerNoFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.85, green: 0.85, blue: 0.85 },
@@ -1619,7 +1619,7 @@
             });
 
             const endRow = startRow + componentes.length - 1;
-            const range = `'${tabName}'!A${startRow}:O${endRow}`;  // Incluir nombre del tab
+            const range = `'${tabName}'!B${startRow}:O${endRow}`;  // Empezar desde columna B
 
             try {
                 await gapi.client.sheets.spreadsheets.values.update({
