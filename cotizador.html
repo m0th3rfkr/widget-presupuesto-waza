@@ -1162,44 +1162,73 @@
                 console.log(`📊 ${tabName} - Arquitectura: ${arquitectura.length}, Funcionales: ${funcionales.length}, No Funcionales: ${noFuncionales.length}`);
                 console.log('🔍 Componentes No Funcionales:', noFuncionales.map(c => c.nombre));
 
-                // 3. Calcular filas necesarias y posiciones (basadas en la estructura real del template)
-                const minFilasPorSeccion = 3;
+                // 3. CALCULAR POSICIONES DINÁMICAMENTE SEGÚN CONTENIDO REAL
+                console.log(`🧮 Calculando posiciones dinámicas para ${tabName}:`);
+                console.log(`   📊 Arquitectura: ${arquitectura.length} componentes`);
+                console.log(`   📊 Funcionales: ${funcionales.length} componentes`);
+                console.log(`   📊 No Funcionales: ${noFuncionales.length} componentes`);
 
-                // Posiciones iniciales en el template (verificadas en el sheet)
+                // Posiciones base del template
                 let posArquitectura = 8;   // Datos empiezan en fila 8 (después del header en fila 6-7)
-                let posFuncionales = 15;   // Datos empiezan en fila 15 (después del header en fila 13-14)
-                let posNoFuncionales = 21; // Datos empiezan en fila 21 (justo después del header ITEM)
 
-                // 3.5. Verificar y agregar título de "Requisitos No Funcionales" si no existe
-                if (noFuncionales.length > 0) {
-                    console.log('🔍 Verificando título de Requisitos No Funcionales...');
+                // Calcular posición de Funcionales dinámicamente
+                let tituloFuncionales = posArquitectura + arquitectura.length + 1; // +1 para espacio
+                let headerFuncionales = tituloFuncionales + 1; // Header después del título
+                let posFuncionales = headerFuncionales + 1; // Datos después del header
+
+                // Calcular posición de No Funcionales dinámicamente
+                let tituloNoFuncionales = posFuncionales + funcionales.length + 1; // +1 para espacio
+                let headerNoFuncionales = tituloNoFuncionales + 1; // Header después del título
+                let posNoFuncionales = headerNoFuncionales + 1; // Datos después del header
+
+                console.log(`📍 Posiciones calculadas para ${tabName}:`);
+                console.log(`   🏗️  Arquitectura datos: fila ${posArquitectura}`);
+                console.log(`   📋 Funcionales título: fila ${tituloFuncionales}, datos: fila ${posFuncionales}`);
+                console.log(`   🛡️  No Funcionales título: fila ${tituloNoFuncionales}, datos: fila ${posNoFuncionales}`);
+
+                // 4. INSERTAR TÍTULOS Y HEADERS EN POSICIONES DINÁMICAS
+                console.log(`🏗️ Insertando títulos en posiciones calculadas...`);
+
+                // Insertar título y header de Requisitos Funcionales
+                if (funcionales.length > 0) {
                     try {
-                        // Insertar título en fila 20-21
-                        await gapi.client.sheets.spreadsheets.values.update({
+                        await gapi.client.sheets.spreadsheets.values.batchUpdate({
                             spreadsheetId: sheetId,
-                            range: `'${tabName}'!A20:B20`,
-                            valueInputOption: 'RAW',
                             resource: {
-                                values: [['Requisitos No Funcionales', '']]
+                                valueInputOption: 'RAW',
+                                data: [
+                                    { range: `'${tabName}'!A${tituloFuncionales}:B${tituloFuncionales}`, values: [['Requisitos Funcionales', '']] },
+                                    { range: `'${tabName}'!A${headerFuncionales}:B${headerFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
+                                ]
                             }
                         });
-                        // Insertar header ITEM en fila 21 (sin fila vacía)
-                        await gapi.client.sheets.spreadsheets.values.update({
-                            spreadsheetId: sheetId,
-                            range: `'${tabName}'!A21:B21`,
-                            valueInputOption: 'RAW',
-                            resource: {
-                                values: [['ITEM', 'DESCRIPCION']]
-                            }
-                        });
-                        console.log('✅ Título de Requisitos No Funcionales agregado');
+                        console.log(`✅ Títulos Funcionales insertados en filas ${tituloFuncionales}-${headerFuncionales}`);
                     } catch (error) {
-                        console.log('⚠️ Error agregando título (puede que ya exista):', error);
+                        console.log('⚠️ Error insertando títulos Funcionales:', error);
                     }
                 }
 
-                // 4. Primero llenar datos sin insertar filas (para evitar errores 400)
-                console.log('🔧 Llenando datos en posiciones existentes primero...');
+                // Insertar título y header de Requisitos No Funcionales
+                if (noFuncionales.length > 0) {
+                    try {
+                        await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                            spreadsheetId: sheetId,
+                            resource: {
+                                valueInputOption: 'RAW',
+                                data: [
+                                    { range: `'${tabName}'!A${tituloNoFuncionales}:B${tituloNoFuncionales}`, values: [['Requisitos No Funcionales', '']] },
+                                    { range: `'${tabName}'!A${headerNoFuncionales}:B${headerNoFuncionales}`, values: [['ITEM', 'DESCRIPCION']] }
+                                ]
+                            }
+                        });
+                        console.log(`✅ Títulos No Funcionales insertados en filas ${tituloNoFuncionales}-${headerNoFuncionales}`);
+                    } catch (error) {
+                        console.log('⚠️ Error insertando títulos No Funcionales:', error);
+                    }
+                }
+
+                // 5. LLENAR DATOS EN POSICIONES CALCULADAS DINÁMICAMENTE
+                console.log('🔧 Llenando datos en posiciones calculadas dinámicamente...');
 
                 // Contador global para numeración continua 1-12
                 let contadorGlobal = 1;
@@ -1208,11 +1237,16 @@
                 contadorGlobal = await fillSectionDataWithTier(sheetId, 'Requisitos Funcionales', funcionales, posFuncionales, config, contadorGlobal, tabName);
                 contadorGlobal = await fillSectionDataWithTier(sheetId, 'Requisitos No Funcionales', noFuncionales, posNoFuncionales, config, contadorGlobal, tabName);
 
-                console.log(`✅ Datos llenados correctamente en tab "${tabName}"`);
+                console.log(`✅ Datos llenados correctamente en tab "${tabName}" - Total items: ${contadorGlobal - 1}`);
 
-                // 6. APLICAR FORMATEO COMPLETO AL FINAL
+                // 6. APLICAR FORMATEO COMPLETO CON POSICIONES DINÁMICAS
                 console.log(`🎨 Aplicando formato profesional a tab "${tabName}"...`);
-                await aplicarFormateoCompleto(sheetId, tabName);
+                await aplicarFormateoCompletoConPosiciones(sheetId, tabName, {
+                    tituloFuncionales,
+                    headerFuncionales,
+                    tituloNoFuncionales,
+                    headerNoFuncionales
+                });
 
             } catch (error) {
                 console.error(`❌ Error llenando datos en tab "${tabName}":`, error);
@@ -1220,7 +1254,131 @@
             }
         }
 
-        // APLICAR FORMATEO COMPLETO POST-GENERACIÓN (Solución #3)
+        // APLICAR FORMATEO COMPLETO CON POSICIONES DINÁMICAS (Solución Robusta)
+        async function aplicarFormateoCompletoConPosiciones(sheetId, tabName, posiciones) {
+            console.log(`🎨 Iniciando formateo dinámico para tab "${tabName}"`);
+            console.log(`📍 Posiciones recibidas:`, posiciones);
+
+            try {
+                // 1. OBTENER EL SHEET ID REAL DEL TAB
+                const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+                    spreadsheetId: sheetId
+                });
+
+                const targetSheet = spreadsheet.result.sheets.find(sheet =>
+                    sheet.properties.title === tabName
+                );
+
+                if (!targetSheet) {
+                    console.error(`❌ No se encontró el tab "${tabName}"`);
+                    return;
+                }
+
+                const realSheetId = targetSheet.properties.sheetId;
+                console.log(`📋 Usando sheetId real: ${realSheetId} para tab "${tabName}"`);
+
+                const requests = [];
+
+                // 2. FORMATEAR TÍTULOS DE SECCIONES CON POSICIONES DINÁMICAS
+                // Arquitectura Técnica (fila 6)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // Requisitos Funcionales (posición dinámica)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // Requisitos No Funcionales (posición dinámica)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // 3. FORMATEAR HEADERS "ITEM" CON POSICIONES DINÁMICAS
+                // Arquitectura Técnica header (fila 7)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: 6, endRowIndex: 7, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // Requisitos Funcionales header (posición dinámica)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerFuncionales - 1, endRowIndex: posiciones.headerFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // Requisitos No Funcionales header (posición dinámica)
+                requests.push({
+                    repeatCell: {
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.headerNoFuncionales - 1, endRowIndex: posiciones.headerNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        cell: {
+                            userEnteredFormat: {
+                                backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
+                                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true }
+                            }
+                        },
+                        fields: 'userEnteredFormat(backgroundColor,textFormat)'
+                    }
+                });
+
+                // 4. APLICAR TODOS LOS FORMATOS
+                await gapi.client.sheets.spreadsheets.batchUpdate({
+                    spreadsheetId: sheetId,
+                    resource: { requests }
+                });
+
+                console.log(`✅ Formateo dinámico aplicado exitosamente a "${tabName}"`);
+
+            } catch (error) {
+                console.error(`❌ Error aplicando formateo dinámico a "${tabName}":`, error);
+            }
+        }
+
+        // APLICAR FORMATEO COMPLETO POST-GENERACIÓN (Solución #3 - LEGACY)
         async function aplicarFormateoCompleto(sheetId, tabName) {
             console.log(`🎨 Iniciando formateo completo para tab "${tabName}"`);
 
