@@ -1285,33 +1285,33 @@
 
                 // 2. FUSIONAR Y FORMATEAR TÍTULOS DE SECCIONES CON POSICIONES DINÁMICAS
 
-                // Fusionar celdas SOLO A-B para títulos (no incluir columna C)
+                // Fusionar celdas B-C para títulos
                 requests.push({
                     mergeCells: {
-                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 1, endColumnIndex: 3 },
                         mergeType: 'MERGE_COLUMNS'
                     }
                 });
 
                 requests.push({
                     mergeCells: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         mergeType: 'MERGE_COLUMNS'
                     }
                 });
 
                 requests.push({
                     mergeCells: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         mergeType: 'MERGE_COLUMNS'
                     }
                 });
 
-                // Formatear SOLO títulos fusionados A-B (no headers)
+                // Formatear SOLO títulos fusionados B-C (no headers)
                 // Arquitectura Técnica (fila 6)
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1323,10 +1323,10 @@
                     }
                 });
 
-                // Requisitos Funcionales (posición dinámica) - título fusionado A-B
+                // Requisitos Funcionales (posición dinámica) - título fusionado B-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloFuncionales - 1, endRowIndex: posiciones.tituloFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
@@ -1338,10 +1338,10 @@
                     }
                 });
 
-                // Requisitos No Funcionales (posición dinámica) - título fusionado A-B
+                // Requisitos No Funcionales (posición dinámica) - título fusionado B-C
                 requests.push({
                     repeatCell: {
-                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 0, endColumnIndex: 2 },
+                        range: { sheetId: realSheetId, startRowIndex: posiciones.tituloNoFuncionales - 1, endRowIndex: posiciones.tituloNoFuncionales, startColumnIndex: 1, endColumnIndex: 3 },
                         cell: {
                             userEnteredFormat: {
                                 backgroundColor: { red: 0.26, green: 0.52, blue: 0.96 },
